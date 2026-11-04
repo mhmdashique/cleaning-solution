@@ -1,0 +1,210 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Plan C Ops Hub Tokens — Light theme by default */
+:root {
+  --bg: #F6F7F6;
+  --surface: #FFFFFF;
+  --raised: #F1F4F2;
+  --border: #E3E8E5;
+  --ink: #12201B;
+  --muted: #5D6B65;
+  --accent: #0F6B54;
+  --accent-soft: #E3F2EC;
+  --sidebar: #0E1512;
+  --sidebar-text: #B7C2BC;
+  --sidebar-hover: #17211C;
+  --sidebar-active: #1B2A23;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+
+  --status-completed-text: #0F6B54;
+  --status-completed-bg: rgba(15, 107, 84, 0.13);
+  --status-completed-border: rgba(15, 107, 84, 0.40);
+
+  --status-inprogress-text: #2F7FC1;
+  --status-inprogress-bg: rgba(47, 127, 193, 0.13);
+  --status-inprogress-border: rgba(47, 127, 193, 0.40);
+
+  --status-confirmed-text: #6C5BC9;
+  --status-confirmed-bg: rgba(108, 91, 201, 0.13);
+  --status-confirmed-border: rgba(108, 91, 201, 0.40);
+
+  --status-pending-text: #B57F0A;
+  --status-pending-bg: rgba(181, 127, 10, 0.13);
+  --status-pending-border: rgba(181, 127, 10, 0.40);
+
+  --status-cancelled-text: #DC2626;
+  --status-cancelled-bg: rgba(220, 38, 38, 0.13);
+  --status-cancelled-border: rgba(220, 38, 38, 0.40);
+
+  --background: var(--bg);
+  --foreground: var(--ink);
+}
+
+/* Optional Dark theme via prefers-color-scheme or data-theme */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"],
+  :root:not([data-theme="light"]) {
+    --bg: #0A0F0D;
+    --surface: #101814;
+    --raised: #16211B;
+    --border: #1F2D26;
+    --ink: #E8EFEB;
+    --muted: #93A39B;
+    --accent: #3FBF97;
+    --accent-soft: rgba(63, 191, 151, 0.15);
+    --sidebar: #0C120F;
+    --sidebar-text: #B7C2BC;
+    --sidebar-hover: #16211B;
+    --sidebar-active: #1F2D26;
+    --sidebar-border: #1F2D26;
+
+    --status-completed-text: #3FBF97;
+    --status-completed-bg: rgba(63, 191, 151, 0.13);
+    --status-completed-border: rgba(63, 191, 151, 0.40);
+
+    --status-inprogress-text: #38BDF8;
+    --status-inprogress-bg: rgba(56, 189, 248, 0.13);
+    --status-inprogress-border: rgba(56, 189, 248, 0.40);
+
+    --status-confirmed-text: #A78BFA;
+    --status-confirmed-bg: rgba(167, 139, 250, 0.13);
+    --status-confirmed-border: rgba(167, 139, 250, 0.40);
+
+    --status-pending-text: #FBBF24;
+    --status-pending-bg: rgba(251, 191, 36, 0.13);
+    --status-pending-border: rgba(251, 191, 36, 0.40);
+
+    --status-cancelled-text: #F87171;
+    --status-cancelled-bg: rgba(248, 113, 113, 0.13);
+    --status-cancelled-border: rgba(248, 113, 113, 0.40);
+
+    --background: var(--bg);
+    --foreground: var(--ink);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0A0F0D;
+  --surface: #101814;
+  --raised: #16211B;
+  --border: #1F2D26;
+  --ink: #E8EFEB;
+  --muted: #93A39B;
+  --accent: #3FBF97;
+  --accent-soft: rgba(63, 191, 151, 0.15);
+  --sidebar: #0C120F;
+  --sidebar-text: #B7C2BC;
+  --sidebar-hover: #16211B;
+  --sidebar-active: #1F2D26;
+  --sidebar-border: #1F2D26;
+
+  --status-completed-text: #3FBF97;
+  --status-completed-bg: rgba(63, 191, 151, 0.13);
+  --status-completed-border: rgba(63, 191, 151, 0.40);
+
+  --status-inprogress-text: #38BDF8;
+  --status-inprogress-bg: rgba(56, 189, 248, 0.13);
+  --status-inprogress-border: rgba(56, 189, 248, 0.40);
+
+  --status-confirmed-text: #A78BFA;
+  --status-confirmed-bg: rgba(167, 139, 250, 0.13);
+  --status-confirmed-border: rgba(167, 139, 250, 0.40);
+
+  --status-pending-text: #FBBF24;
+  --status-pending-bg: rgba(251, 191, 36, 0.13);
+  --status-pending-border: rgba(251, 191, 36, 0.40);
+
+  --status-cancelled-text: #F87171;
+  --status-cancelled-bg: rgba(248, 113, 113, 0.13);
+  --status-cancelled-border: rgba(248, 113, 113, 0.40);
+
+  --background: var(--bg);
+  --foreground: var(--ink);
+}
+
+/* Global scale-down: make the 100% browser zoom view match the previous 90% zoom look */
+html {
+  zoom: 0.9;
+}
+
+/* Admin Shell reset — guarantees html, body and shell share background with 0 gaps */
+html.admin-mode,
+html:has([data-admin-shell]) {
+  zoom: 1 !important;
+  background-color: var(--bg) !important;
+  min-height: 100dvh !important;
+}
+
+body.admin-mode,
+body:has([data-admin-shell]) {
+  zoom: 1 !important;
+  background-color: var(--bg) !important;
+  color: var(--ink) !important;
+  min-height: 100dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* The Next.js root <main> that wraps admin pages must stretch to fill */
+body.admin-mode > main,
+body:has([data-admin-shell]) > main {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  background-color: var(--bg) !important;
+}
+
+/* The admin shell itself fills the flex column */
+[data-admin-shell] {
+  flex: 1 1 auto !important;
+  min-height: 100dvh !important;
+  background-color: var(--bg) !important;
+}
+
+/* Hide Next.js dev indicator on admin pages */
+body.admin-mode [data-nextjs-toast],
+body.admin-mode nextjs-portal,
+body:has([data-admin-shell]) [data-nextjs-toast],
+body:has([data-admin-shell]) nextjs-portal {
+  display: none !important;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(93, 107, 101, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(93, 107, 101, 0.4);
+}
+
+/* Dark scrollbar for sidebar */
+aside::-webkit-scrollbar-track {
+  background: #0E1512;
+}
+aside::-webkit-scrollbar-thumb {
+  background: #1B2A23;
+  border-radius: 4px;
+}
+aside::-webkit-scrollbar-thumb:hover {
+  background: #253930;
+}

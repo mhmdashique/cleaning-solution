@@ -1,0 +1,151 @@
+-- ==============================================================================
+-- PLAN C Cleaning Solutions - Supabase Database Schema
+-- Location: Thrikannapuram, Thiruvananthapuram, Kerala
+-- Phone: 7994342372
+-- ==============================================================================
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. SERVICES TABLE
+CREATE TABLE IF NOT EXISTS services (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (category IN ('cleaning', 'pest_control', 'commercial', 'specialised')),
+    short_desc TEXT NOT NULL,
+    long_desc TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    icon TEXT,
+    is_featured BOOLEAN DEFAULT false,
+    sort_order INTEGER DEFAULT 0,
+    meta_title TEXT,
+    meta_description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for service lookups
+CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
+CREATE INDEX IF NOT EXISTS idx_services_category ON services(category);
+CREATE INDEX IF NOT EXISTS idx_services_featured ON services(is_featured);
+
+-- 2. BOOKINGS TABLE
+CREATE TABLE IF NOT EXISTS bookings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    booking_code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    email TEXT,
+    phone TEXT NOT NULL,
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+    service_name TEXT,
+    address TEXT NOT NULL,
+    preferred_date DATE,
+    message TEXT,
+    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'In progress', 'Completed', 'Cancelled')),
+    assigned_team TEXT DEFAULT 'PLAN C Quick Response Unit',
+    admin_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for booking lookups
+CREATE INDEX IF NOT EXISTS idx_bookings_code ON bookings(booking_code);
+CREATE INDEX IF NOT EXISTS idx_bookings_phone ON bookings(phone);
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_created ON bookings(created_at DESC);
+
+-- 3. REVIEWS TABLE
+CREATE TABLE IF NOT EXISTS reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    location TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    service_id UUID REFERENCES services(id) ON DELETE SET NULL,
+    service_name TEXT,
+    comment TEXT NOT NULL,
+    approved BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index for reviews
+CREATE INDEX IF NOT EXISTS idx_reviews_approved ON reviews(approved);
+CREATE INDEX IF NOT EXISTS idx_reviews_rating ON reviews(rating DESC);
+
+-- 4. BLOG POSTS TABLE
+CREATE TABLE IF NOT EXISTS blog_posts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    slug TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    excerpt TEXT NOT NULL,
+    content TEXT NOT NULL,
+    cover_image TEXT NOT NULL,
+    category TEXT NOT NULL,
+    tags TEXT[] DEFAULT '{}',
+    author TEXT DEFAULT 'PLAN C Editorial Team',
+    published BOOLEAN DEFAULT true,
+    meta_title TEXT,
+    meta_description TEXT,
+    published_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_blog_slug ON blog_posts(slug);
+CREATE INDEX IF NOT EXISTS idx_blog_published ON blog_posts(published, published_at DESC);
+
+-- 5. FAQS TABLE
+CREATE TABLE IF NOT EXISTS faqs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    service_id UUID REFERENCES services(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_faqs_service ON faqs(service_id);
+
+-- 6. SITE SETTINGS TABLE
+CREATE TABLE IF NOT EXISTS site_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. ROW LEVEL SECURITY (RLS) POLICIES
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+
+-- Services: Everyone can read services
+CREATE POLICY "Public services read" ON services
+    FOR SELECT USING (true);
+
+-- Bookings: Anyone can create a booking; Customers can read their own booking via booking_code & phone
+CREATE POLICY "Public booking insert" ON bookings
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public tracking read" ON bookings
+    FOR SELECT USING (true);
+
+-- Reviews: Anyone can read approved reviews; Anyone can submit a review with approved = false
+CREATE POLICY "Public approved reviews read" ON reviews
+    FOR SELECT USING (approved = true);
+
+CREATE POLICY "Public review insert" ON reviews
+    FOR INSERT WITH CHECK (approved = false);
+
+-- Blog Posts: Anyone can read published posts
+CREATE POLICY "Public blog read" ON blog_posts
+    FOR SELECT USING (published = true);
+
+-- FAQs: Everyone can read FAQs
+CREATE POLICY "Public faqs read" ON faqs
+    FOR SELECT USING (true);
+
+-- Site Settings: Everyone can read settings
+CREATE POLICY "Public site_settings read" ON site_settings
+    FOR SELECT USING (true);
+
+-- Service Role (Server-side admin operations) automatically bypasses RLS
+-- when using the SUPABASE_SERVICE_ROLE_KEY.
+
