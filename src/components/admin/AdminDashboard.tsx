@@ -5,6 +5,8 @@ import { Booking, Service, Review, BlogPost, BookingStatus } from "@/types";
 import { 
   logoutAdminAction, 
   updateBookingAdminAction, 
+  updateBookingAmountAdminAction,
+  updateBookingPaymentStatusAdminAction,
   toggleReviewApprovalAction, 
   deleteReviewAdminAction, 
   createBlogPostAdminAction, 
@@ -26,7 +28,8 @@ import {
   AdminService, 
   AdminReview, 
   AdminArticle, 
-  AdminClientNote 
+  AdminClientNote,
+  PaymentStatus,
 } from "@/types/admin";
 
 import { 
@@ -70,7 +73,8 @@ export default function AdminDashboard({
           serviceName: b.service_name,
           area: b.address.split(",")[0] || "Trivandrum",
           status: b.status,
-          amount: b.status === "Completed" ? "₹3,500" : "₹2,500",
+          paymentStatus: b.is_paid ? "Paid" : "Unpaid",
+          amount: b.amount ?? null,
           createdAt: "18 May 2025",
           serviceDate: b.preferred_date || "19 May 2025",
           statusUpdatedAt: "18 May 2025",
@@ -99,7 +103,6 @@ export default function AdminDashboard({
             ? "Specialised" 
             : "Cleaning",
           shortDesc: s.short_desc,
-          priceFrom: mockMatch.priceFrom || "₹2,500",
           duration: mockMatch.duration || "2–3 hours",
           bookingsCount: mockMatch.bookingsCount || 15,
           isFeatured: s.is_featured,
@@ -176,6 +179,51 @@ export default function AdminDashboard({
     });
   };
 
+  const handlePaymentStatusChange = async (
+    bookingId: string,
+    paymentStatus: PaymentStatus
+  ): Promise<boolean> => {
+    const result = await updateBookingPaymentStatusAdminAction(bookingId, paymentStatus);
+    if (!result.success) {
+      setToast({
+        id: `toast-${Date.now()}`,
+        text: result.error || "Unable to update payment status.",
+      });
+      return false;
+    }
+
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, paymentStatus } : b))
+    );
+    setToast({ id: `toast-${Date.now()}`, text: `Payment marked as ${paymentStatus}.` });
+    return true;
+  };
+
+  const handleBookingAmountChange = async (
+    bookingId: string,
+    amount: number | null
+  ): Promise<boolean> => {
+    const result = await updateBookingAmountAdminAction(bookingId, amount);
+    if (!result.success) {
+      setToast({
+        id: `toast-${Date.now()}`,
+        text: result.error || "Unable to save booking amount.",
+      });
+      return false;
+    }
+
+    setBookings((prev) =>
+      prev.map((booking) =>
+        booking.id === bookingId ? { ...booking, amount } : booking
+      )
+    );
+    setToast({
+      id: `toast-${Date.now()}`,
+      text: amount === null ? "Booking amount cleared." : "Booking amount saved.",
+    });
+    return true;
+  };
+
   // Service handlers
   const handleToggleFeatured = (id: string) => {
     setServices((prev) =>
@@ -204,7 +252,6 @@ export default function AdminDashboard({
       name: newSrv.name || "Untitled service",
       category: newSrv.category || "Cleaning",
       shortDesc: newSrv.shortDesc || "",
-      priceFrom: newSrv.priceFrom || "₹1,500",
       duration: newSrv.duration || "2 hours",
       bookingsCount: 0,
       isFeatured: false,
@@ -400,6 +447,8 @@ export default function AdminDashboard({
           <BookingsView
             bookings={bookings}
             onStatusChange={handleStatusChange}
+            onPaymentStatusChange={handlePaymentStatusChange}
+            onAmountChange={handleBookingAmountChange}
             initialFilter={bookingsFilter}
           />
         )}

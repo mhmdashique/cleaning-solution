@@ -6,6 +6,8 @@ export interface BookingTimelineItem {
   description: string;
 }
 
+export type PaymentStatus = "Paid" | "Unpaid";
+
 export interface AdminBooking {
   id: string;
   bookingCode: string;
@@ -16,7 +18,8 @@ export interface AdminBooking {
   serviceName: string;
   area: string;
   status: BookingStatus;
-  amount: string;
+  paymentStatus: PaymentStatus;
+  amount: number | null;
   createdAt: string;
   serviceDate: string;
   statusUpdatedAt: string;
@@ -31,7 +34,6 @@ export interface AdminService {
   name: string;
   category: "Cleaning" | "Pest control" | "Commercial" | "Specialised";
   shortDesc: string;
-  priceFrom: string;
   duration: string;
   bookingsCount: number;
   isFeatured: boolean;
@@ -104,4 +106,3 @@ export interface OpsPipelineFulfillment {
 }
 
 export type AdminTab = "overview" | "bookings" | "services" | "reviews" | "blog" | "messages";
-

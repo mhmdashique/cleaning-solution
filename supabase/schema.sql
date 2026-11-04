@@ -42,10 +42,18 @@ CREATE TABLE IF NOT EXISTS bookings (
     preferred_date DATE,
     message TEXT,
     status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'In progress', 'Completed', 'Cancelled')),
+    amount NUMERIC(12, 2),
+    is_paid BOOLEAN NOT NULL DEFAULT false,
     assigned_team TEXT DEFAULT 'PLAN C Quick Response Unit',
     admin_notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS amount NUMERIC(12, 2);
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS is_paid BOOLEAN NOT NULL DEFAULT false;
 
 -- Index for booking lookups
 CREATE INDEX IF NOT EXISTS idx_bookings_code ON bookings(booking_code);
@@ -148,4 +156,3 @@ CREATE POLICY "Public site_settings read" ON site_settings
 
 -- Service Role (Server-side admin operations) automatically bypasses RLS
 -- when using the SUPABASE_SERVICE_ROLE_KEY.
-

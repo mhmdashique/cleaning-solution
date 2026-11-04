@@ -7,6 +7,7 @@ import ServiceDonut from "../ops/ServiceDonut";
 import PeakHoursChart from "../ops/PeakHoursChart";
 import RecentBookingsTable from "../ops/RecentBookingsTable";
 import { AdminBooking } from "@/types/admin";
+import { formatCurrency } from "@/lib/formatCurrency";
 import {
   opsOverviewMetrics,
 } from "@/lib/data/adminMockData";
@@ -34,6 +35,13 @@ export default function OverviewView({
 
   const pipelinePercentage =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const completedBookings = bookings.filter(
+    (booking) => booking.status === "Completed" && booking.amount !== null
+  );
+  const billedRevenue = completedBookings.reduce(
+    (total, booking) => total + (booking.amount || 0),
+    0
+  );
 
   const trendLast7Days = [
     { date: "Thu", bookings: 1 },
@@ -54,13 +62,6 @@ export default function OverviewView({
     { date: "Oct 28", bookings: 6 },
     { date: "Nov 1", bookings: 5 },
     { date: "Nov 4", bookings: 4 },
-  ];
-
-  const revenueByWeek = [
-    { week: "W1", revenue: 8500 },
-    { week: "W2", revenue: 14000 },
-    { week: "W3", revenue: 10500 },
-    { week: "W4", revenue: 18200 },
   ];
 
   const servicesDonut = [
@@ -112,8 +113,14 @@ export default function OverviewView({
         />
         <KpiCard
           label="Billed revenue"
-          value="₹3,500"
-          sublabel={`${completedCount} completed job`}
+          value={completedBookings.length > 0 ? formatCurrency(billedRevenue) : "—"}
+          sublabel={
+            completedBookings.length > 0
+              ? `${completedBookings.length} priced completed ${
+                  completedBookings.length === 1 ? "job" : "jobs"
+                }`
+              : "No booking amounts entered"
+          }
         />
       </div>
 
@@ -135,7 +142,6 @@ export default function OverviewView({
               confirmed: confirmedCount,
               pending: pendingCount,
             }}
-            revenueData={revenueByWeek}
           />
         </div>
       </div>

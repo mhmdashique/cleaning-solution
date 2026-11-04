@@ -21,9 +21,11 @@ import {
   User, 
   AlertCircle, 
   Sparkles,
+  IndianRupee,
   RefreshCw,
   Star
 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function TrackClient() {
   const searchParams = useSearchParams();
@@ -288,6 +290,17 @@ export default function TrackClient() {
               </p>
             </div>
 
+            {booking.amount !== undefined && booking.amount !== null && (
+              <div className="space-y-1">
+                <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <IndianRupee className="w-3.5 h-3.5" /> Confirmed Amount
+                </span>
+                <p className="font-bold text-brand-800">
+                  {formatCurrency(booking.amount)}
+                </p>
+              </div>
+            )}
+
             <div className="sm:col-span-2 space-y-1 pt-2 border-t border-slate-200">
               <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" /> Service Address
@@ -405,4 +418,3 @@ export default function TrackClient() {
     </div>
   );
 }
-

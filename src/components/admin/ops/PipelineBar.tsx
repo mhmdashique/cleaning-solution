@@ -1,7 +1,6 @@
 "use client";
 
 import ChartCard from "./ChartCard";
-import RevenueChart from "./RevenueChart";
 
 interface PipelineCounts {
   completed: number;
@@ -10,23 +9,16 @@ interface PipelineCounts {
   pending: number;
 }
 
-interface WeekRevenue {
-  week: string;
-  revenue: number;
-}
-
 interface PipelineBarProps {
   percentage: number;
   summary: string;
   counts: PipelineCounts;
-  revenueData: WeekRevenue[];
 }
 
 export default function PipelineBar({
   percentage,
   summary,
   counts,
-  revenueData,
 }: PipelineBarProps) {
   const total = counts.completed + counts.inProgress + counts.confirmed + counts.pending || 1;
 
@@ -41,7 +33,7 @@ export default function PipelineBar({
     <ChartCard
       title="Pipeline fulfilment"
       subtitle={summary}
-      ariaLabel="Pipeline fulfilment status and weekly revenue"
+      ariaLabel="Pipeline fulfilment status"
     >
       <div className="space-y-4">
         {/* Big percentage & fulfilled summary */}
@@ -86,14 +78,6 @@ export default function PipelineBar({
               <span className="font-semibold text-[#12201B] ml-auto">{s.count}</span>
             </div>
           ))}
-        </div>
-
-        {/* Revenue by week breakdown */}
-        <div className="pt-3 border-t border-[#E3E8E5]">
-          <div className="text-[12.5px] font-semibold text-[#12201B] mb-1">
-            Revenue by week
-          </div>
-          <RevenueChart data={revenueData} />
         </div>
       </div>
     </ChartCard>

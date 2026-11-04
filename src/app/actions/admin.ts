@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { 
   updateBookingStatus, 
+  updateBookingAmount,
+  updateBookingPaymentStatus,
   updateReviewApproval, 
   deleteReview, 
   createBlogPost, 
@@ -61,6 +63,67 @@ export async function updateBookingAdminAction(
   await updateBookingStatus(id, status, notes, team);
   revalidatePath("/admin");
   revalidatePath("/track");
+  return { success: true };
+}
+
+export async function updateBookingAmountAdminAction(
+  id: string,
+  amount: number | null
+) {
+  const isAdmin = await checkAdminSession();
+  if (!isAdmin) return { success: false, error: "Unauthorized" };
+
+  if (
+    amount !== null &&
+    (!Number.isFinite(amount) ||
+      amount < 0 ||
+      amount > 9_999_999_999.99 ||
+      Math.abs(amount * 100 - Math.round(amount * 100)) > 1e-8)
+  ) {
+    return { success: false, error: "Enter a valid non-negative amount." };
+  }
+
+  try {
+    const updated = await updateBookingAmount(id, amount);
+    if (!updated) {
+      return { success: false, error: "Booking not found. The amount was not saved." };
+    }
+  } catch {
+    return {
+      success: false,
+      error: "Unable to save the amount. Check that the booking amount database migration has been applied.",
+    };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/track");
+  return { success: true };
+}
+
+export async function updateBookingPaymentStatusAdminAction(
+  id: string,
+  paymentStatus: "Paid" | "Unpaid"
+) {
+  const isAdmin = await checkAdminSession();
+  if (!isAdmin) return { success: false, error: "Unauthorized" };
+
+  if (paymentStatus !== "Paid" && paymentStatus !== "Unpaid") {
+    return { success: false, error: "Invalid payment status." };
+  }
+
+  try {
+    const updated = await updateBookingPaymentStatus(id, paymentStatus === "Paid");
+    if (!updated) {
+      return { success: false, error: "Booking not found. Payment status was not updated." };
+    }
+  } catch {
+    return {
+      success: false,
+      error: "Unable to update payment status. Check that the booking payment migration has been applied.",
+    };
+  }
+
+  revalidatePath("/admin");
   return { success: true };
 }
 

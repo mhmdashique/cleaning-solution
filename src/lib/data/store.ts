@@ -250,6 +250,62 @@ export async function updateBookingStatus(
   return false;
 }
 
+export async function updateBookingAmount(
+  id: string,
+  amount: number | null
+): Promise<boolean> {
+  if (hasDb && db) {
+    const { data, error } = await db
+      .from("bookings")
+      .update({ amount })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data !== null;
+  }
+
+  const target = memoryDb.bookings.find(
+    (booking) => booking.id === id || booking.booking_code === id
+  );
+  if (!target) return false;
+
+  target.amount = amount;
+  return true;
+}
+
+export async function updateBookingPaymentStatus(
+  id: string,
+  isPaid: boolean
+): Promise<boolean> {
+  if (hasDb && db) {
+    const { data, error } = await db
+      .from("bookings")
+      .update({ is_paid: isPaid })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data !== null;
+  }
+
+  const target = memoryDb.bookings.find(
+    (booking) => booking.id === id || booking.booking_code === id
+  );
+  if (!target) return false;
+
+  target.is_paid = isPaid;
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // REVIEWS
 // ---------------------------------------------------------------------------

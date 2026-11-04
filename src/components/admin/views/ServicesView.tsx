@@ -50,7 +50,6 @@ export default function ServicesView({
   // Form State
   const [name, setName] = useState("");
   const [cat, setCat] = useState<AdminService["category"]>("Cleaning");
-  const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("");
   const [desc, setDesc] = useState("");
 
@@ -81,7 +80,6 @@ export default function ServicesView({
       name,
       slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       category: cat,
-      priceFrom: price || "₹1,500",
       duration: duration || "2 hours",
       shortDesc: desc || "Professional cleaning & sanitisation service in Trivandrum.",
       bookingsCount: 0,
@@ -89,7 +87,6 @@ export default function ServicesView({
       isActive: true,
     });
     setName("");
-    setPrice("");
     setDuration("");
     setDesc("");
     setShowNewModal(false);
@@ -115,10 +112,6 @@ export default function ServicesView({
           {s.category}
         </span>
       ),
-    },
-    {
-      header: "Starting price",
-      cell: (s: AdminService) => <span className="font-mono text-[#0F6B54] font-semibold">{s.priceFrom}</span>,
     },
     {
       header: "Duration",
@@ -312,16 +305,9 @@ export default function ServicesView({
                 </p>
               </div>
 
-              {/* Price & Duration Strip */}
-              <div className="bg-[#F1F4F2]/50 p-2.5 rounded-[10px] border border-[#E3E8E5] flex items-center justify-between text-[12.5px]">
-                <div>
-                  <span className="text-[#5D6B65]">From </span>
-                  <span className="font-bold text-[#0F6B54] font-mono">{srv.priceFrom}</span>
-                </div>
-                <div className="flex items-center gap-1 text-[#5D6B65]">
+              <div className="bg-[#F1F4F2]/50 p-2.5 rounded-[10px] border border-[#E3E8E5] flex items-center gap-1 text-[12.5px] text-[#5D6B65]">
                   <Clock className="w-3.5 h-3.5" />
                   <span>{srv.duration}</span>
-                </div>
               </div>
 
               {/* Card Footer */}
@@ -388,7 +374,7 @@ export default function ServicesView({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
                 <div>
                   <label className="block text-[#5D6B65] mb-1 font-medium">Category</label>
                   <select
@@ -401,17 +387,6 @@ export default function ServicesView({
                     <option value="Commercial">Commercial</option>
                     <option value="Specialised">Specialised</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-[#5D6B65] mb-1 font-medium">Starting price</label>
-                  <input
-                    type="text"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g., ₹1,800"
-                    className="w-full px-3 py-2 rounded-[10px] bg-white border border-[#E3E8E5] text-[#12201B] focus:outline-none focus:ring-2 focus:ring-[#0F6B54]"
-                  />
                 </div>
               </div>
 

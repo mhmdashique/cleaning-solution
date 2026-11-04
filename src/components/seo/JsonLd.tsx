@@ -8,7 +8,6 @@ export function LocalBusinessJsonLd() {
     "@id": "https://plancsolutions.in",
     "url": "https://plancsolutions.in",
     "telephone": "+917994342372",
-    "priceRange": "₹₹",
     "address": {
       "@type": "PostalAddress",
       "streetAddress": "Thrikannapuram",
@@ -180,4 +179,3 @@ export function BlogPostJsonLd({
     />
   );
 }
-

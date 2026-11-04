@@ -250,13 +250,13 @@ export default function AdminTopbar({
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
           <div className="bg-white border border-[#e3e8e5] rounded-[14px] p-5 shadow-sm">
-            <div className="text-[12px] font-semibold tracking-wider uppercase text-[#0f6b54] mb-1">
+            <div className="text-[26px] font-extrabold tracking-tight uppercase text-[#0f6b54] mb-1">
               {pageLabel}
             </div>
-            <h1 className="text-[20px] font-bold text-[#12201b] leading-tight">
+            <h1 className="text-[17px] font-semibold text-[#12201b] leading-tight">
               Welcome, Admin 👋
             </h1>
-            <p className="text-[13.5px] text-[#5d6b65] mt-1.5 leading-relaxed">
+            <p className="text-[15px] text-[#5d6b65] mt-1.5 leading-relaxed">
               Here&apos;s what&apos;s happening at Plan C today.
               {pendingCount > 0 ? (
                 <>
@@ -279,16 +279,16 @@ export default function AdminTopbar({
                 " No bookings are pending dispatch right now."
               )}
             </p>
-            <blockquote className="mt-4 border-l-2 border-[#0f6b54] pl-3 text-[12.5px] italic leading-relaxed text-[#66756d]">
+            <blockquote className="mt-4 border-l-2 border-[#0f6b54] pl-3 text-[14px] italic leading-relaxed text-[#66756d]">
               “A cleaner space creates room for a clearer mind.”
             </blockquote>
           </div>
 
           <div className="bg-white border border-[#e3e8e5] rounded-[14px] p-5 flex flex-col justify-center min-w-[200px] shadow-sm">
-            <div className="text-[15px] font-semibold text-[#12201b] leading-tight">
+            <div className="text-[17px] font-semibold text-[#12201b] leading-tight">
               {todayLabel}
             </div>
-            <div className="text-[13px] text-[#5d6b65] mt-1">
+            <div className="text-[15px] text-[#5d6b65] mt-1">
               Thrikannapuram, Trivandrum
             </div>
           </div>

@@ -1,0 +1,4 @@
+src/components/admin/AdminDashboard_backup.tsx(250,6): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/admin/AdminDashboard_backup.tsx(413,8): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/admin/AdminDashboard_backup.tsx(470,12): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/admin/AdminDashboard_backup.tsx(618,19): error TS1005: '</' expected.

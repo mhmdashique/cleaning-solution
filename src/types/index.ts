@@ -30,6 +30,8 @@ export interface Booking {
   preferred_date?: string;
   message?: string;
   status: BookingStatus;
+  amount?: number | null;
+  is_paid?: boolean;
   assigned_team?: string;
   admin_notes?: string;
   created_at: string;
@@ -82,4 +84,3 @@ export interface SiteSettings {
   experience_years: string;
   service_areas: string;
 }
-

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import StatusPill from "../shared/StatusPill";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface BookingRow {
   id: string;
@@ -10,7 +10,7 @@ interface BookingRow {
   service: string;
   area: string;
   status: "Completed" | "In progress" | "Confirmed" | "Pending" | "Cancelled";
-  amount: string;
+  amount: number | null;
   date?: string;
 }
 
@@ -73,7 +73,7 @@ export default function RecentBookingsTable({
                   <StatusPill status={b.status} />
                 </td>
                 <td className="py-3 text-right font-medium text-[#12201B]">
-                  {b.amount}
+                  {b.amount === null ? "—" : formatCurrency(b.amount)}
                 </td>
               </tr>
             ))}

@@ -10,6 +10,7 @@ import {
   opsOverviewMetrics, 
   opsPipelineFulfillment 
 } from "@/lib/data/adminMockData";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,13 @@ export async function GET() {
     const inProgress = bookings.filter((b) => b.status === "In progress").length || 1;
     const completed = bookings.filter((b) => b.status === "Completed").length || 1;
     const confirmed = bookings.filter((b) => b.status === "Confirmed").length || 1;
-    const billedRevenue = completed * 3500;
+    const billedBookings = bookings.filter(
+      (booking) => booking.status === "Completed" && booking.amount != null
+    );
+    const billedRevenue = billedBookings.reduce(
+      (total, booking) => total + (booking.amount || 0),
+      0
+    );
 
     const percentage = totalBookings > 0 ? Math.round((completed / totalBookings) * 100) : 25;
 
@@ -47,8 +54,13 @@ export async function GET() {
           sublabel: "Technicians on site",
         },
         billedRevenue: {
-          value: `₹${billedRevenue.toLocaleString("en-IN")}`,
-          sublabel: `${completed} completed job`,
+          value: billedBookings.length > 0 ? formatCurrency(billedRevenue) : "—",
+          sublabel:
+            billedBookings.length > 0
+              ? `${billedBookings.length} priced completed ${
+                  billedBookings.length === 1 ? "job" : "jobs"
+                }`
+              : "No booking amounts entered",
         },
       },
       pipeline: {
