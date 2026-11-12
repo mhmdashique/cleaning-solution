@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ActionLoadingLink from "@/components/ui/ActionLoadingLink";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Service } from "@/types";
@@ -48,21 +49,25 @@ export default function ServiceCard({ service, index }: ServiceCardProps) {
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-          <Link
+          <ActionLoadingLink
             href={`/services/${service.slug}`}
+            loadingLabel={`Opening ${service.title}...`}
+            showInlineSpinner
             className="group/link inline-flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-brand-800"
           >
             <span>View Details</span>
             <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover/link:translate-x-0.5" />
-          </Link>
+          </ActionLoadingLink>
 
-          <Link
+          <ActionLoadingLink
             href={`/contact?service=${encodeURIComponent(service.title)}`}
+            loadingLabel={`Booking ${service.title}...`}
+            showInlineSpinner
             className="inline-flex items-center gap-1.5 rounded-full bg-brand-700 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
           >
             <span>Book Now</span>
             <ArrowRight className="h-3 w-3" />
-          </Link>
+          </ActionLoadingLink>
         </div>
       </div>
     </motion.div>

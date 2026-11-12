@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import ActionLoadingLink from "@/components/ui/ActionLoadingLink";
 import { Service, ServiceCategory } from "@/types";
 import { 
   Sparkles, 
@@ -174,21 +175,25 @@ export default function ServicesDirectory({
               {/* Action Buttons */}
               <div className="p-6 pt-0 space-y-3">
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <Link
+                  <ActionLoadingLink
                     href={`/services/${service.slug}`}
+                    loadingLabel={`Opening ${service.title}...`}
+                    showInlineSpinner
                     className="group/link inline-flex items-center gap-1 text-xs font-semibold text-slate-600 transition-colors hover:text-brand-800"
                   >
                     <span>View Details</span>
                     <ArrowRight className="w-3 h-3 transition-transform duration-200 group-hover/link:translate-x-0.5" />
-                  </Link>
+                  </ActionLoadingLink>
 
-                  <Link
+                  <ActionLoadingLink
                     href={`/contact?service=${encodeURIComponent(service.title)}`}
+                    loadingLabel={`Booking ${service.title}...`}
+                    showInlineSpinner
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-xs transition-colors"
                   >
                     <span>Book Now</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  </ActionLoadingLink>
                 </div>
               </div>
             </div>

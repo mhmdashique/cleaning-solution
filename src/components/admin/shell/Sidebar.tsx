@@ -13,12 +13,16 @@ import {
   FileText,
   MessageSquare,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
   onLogout?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 interface NavItem {
@@ -41,35 +45,68 @@ const NAV_ITEMS: NavItem[] = [
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarProps) {
+export default function Sidebar({
+  activeTab,
+  onTabChange,
+  onLogout,
+  isCollapsed = false,
+  onToggleCollapse,
+}: SidebarProps) {
   return (
     <>
-      {/* Desktop navigation: 260px, white, full height, fixed, subtle border */}
+      {/* Desktop navigation: 260px expanded or 80px collapsed, white, full height, fixed, smooth transition */}
       <aside
-        className="hidden min-[821px]:flex w-[260px] fixed inset-y-0 left-0 bg-white text-[#6B7280] flex-col justify-between select-none z-30 border-r border-[#EEF0F6] shadow-[1px_0_12px_rgba(15,21,53,0.02)]"
+        className={`hidden min-[821px]:flex ${
+          isCollapsed ? "w-[80px]" : "w-[260px]"
+        } fixed inset-y-0 left-0 bg-white text-[#6B7280] flex-col justify-between select-none z-30 border-r border-[#EEF0F6] shadow-[1px_0_12px_rgba(15,21,53,0.02)] transition-all duration-300 ease-in-out`}
         aria-label="Admin navigation"
       >
         <div className="flex flex-col h-full overflow-y-auto scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          {/* Logo & Brand Header */}
-          <div className="px-6 pt-5 pb-4 border-b border-[#EEF0F6]">
-            <div className="flex items-center gap-3">
+          {/* Logo & Brand Header with Minimize Button */}
+          <div
+            className={`pt-5 pb-4 border-b border-[#EEF0F6] flex items-center ${
+              isCollapsed ? "px-3 justify-center" : "px-5 justify-between"
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
               {/* Green/Blue "Z" style mark */}
               <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#3B82F6] via-[#12B76A] to-[#10B981] text-white flex items-center justify-center font-black text-[19px] tracking-tighter shadow-sm shrink-0">
                 Z
               </div>
-              <div className="min-w-0">
-                <div className="text-[17px] font-bold text-[#0F1535] tracking-[-0.02em] leading-tight">
-                  Plan C
+              {!isCollapsed && (
+                <div className="min-w-0 animate-in fade-in duration-200">
+                  <div className="text-[17px] font-bold text-[#0F1535] tracking-[-0.02em] leading-tight truncate">
+                    Plan C
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-[#6B7280] font-medium tracking-tight truncate">
+                    Operations Hub
+                  </div>
                 </div>
-                <div className="mt-0.5 text-[11px] text-[#6B7280] font-medium tracking-tight">
-                  Operations Hub
-                </div>
-              </div>
+              )}
             </div>
+
+            {/* Sidebar Minimize / Expand Toggle Button with Panel Icon */}
+            {onToggleCollapse && (
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                title={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+                aria-label={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+                className={`w-8 h-8 rounded-xl bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] border border-[#EEF0F6] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs ${
+                  isCollapsed ? "mt-2" : ""
+                }`}
+              >
+                {isCollapsed ? (
+                  <PanelLeftOpen className="w-4 h-4" />
+                ) : (
+                  <PanelLeftClose className="w-4 h-4" />
+                )}
+              </button>
+            )}
           </div>
 
           {/* Navigation Items */}
-          <nav className="px-3 py-3 space-y-0.5 flex-1" aria-label="Main menu">
+          <nav className="px-2.5 py-3 space-y-1 flex-1" aria-label="Main menu">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -78,24 +115,30 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
                   key={item.id}
                   type="button"
                   onClick={() => onTabChange(item.id)}
+                  title={isCollapsed ? item.label : undefined}
                   aria-current={isActive ? "page" : undefined}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] transition-all duration-200 cursor-pointer text-left focus:outline-none ${
+                  className={`w-full flex items-center ${
+                    isCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
+                  } rounded-xl text-[13.5px] transition-all duration-200 cursor-pointer text-left focus:outline-none ${
                     isActive
                       ? "bg-[#EEF0FF] text-[#5B5BF0] font-semibold shadow-xs"
                       : "text-[#6B7280] hover:text-[#0F1535] hover:bg-[#F6F7FD]"
                   }`}
                 >
                   <Icon
-                    className={`w-[18px] h-[18px] shrink-0 transition-colors ${
+                    className={`w-[19px] h-[19px] shrink-0 transition-colors ${
                       isActive ? "text-[#5B5BF0]" : "text-[#6B7280]"
                     }`}
                     strokeWidth={isActive ? 2.2 : 1.8}
                   />
-                  <span className="truncate flex-1">{item.label}</span>
-                  {item.badge !== undefined && (
+                  {!isCollapsed && <span className="truncate flex-1">{item.label}</span>}
+                  {!isCollapsed && item.badge !== undefined && (
                     <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#EF4444] text-[11px] font-bold text-white flex items-center justify-center flex-shrink-0 leading-none">
                       {item.badge}
                     </span>
+                  )}
+                  {isCollapsed && item.badge !== undefined && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#EF4444]" />
                   )}
                 </button>
               );
@@ -103,32 +146,52 @@ export default function Sidebar({ activeTab, onTabChange, onLogout }: SidebarPro
           </nav>
 
           {/* Bottom Area: Profile Badge & Logout Button */}
-          <div className="px-4 py-4 border-t border-[#EEF0F6]">
-            <div className="rounded-[16px] bg-[#F6F7FD] border border-[#EEF0F6] p-3.5 flex items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold text-[14px] shrink-0 shadow-xs ring-2 ring-[#5B5BF0]/15">
+          <div className="px-3 py-4 border-t border-[#EEF0F6]">
+            {isCollapsed ? (
+              <div className="flex flex-col items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-full bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold text-[14px] shrink-0 shadow-xs ring-2 ring-[#5B5BF0]/15"
+                  title="Admin (Operations)"
+                >
                   A
                 </div>
-                <div className="min-w-0">
-                  <div className="text-[13.5px] font-bold text-[#0F1535] leading-tight truncate">
-                    Admin
+                <button
+                  type="button"
+                  onClick={() => onLogout?.()}
+                  title="Sign Out"
+                  aria-label="Logout"
+                  className="w-8 h-8 rounded-xl bg-[#F6F7FD] hover:bg-[#FEE4E2]/60 text-[#6B7280] hover:text-[#EF4444] border border-[#EEF0F6] flex items-center justify-center transition-all cursor-pointer shadow-2xs"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-[16px] bg-[#F6F7FD] border border-[#EEF0F6] p-3 flex items-center justify-between gap-2.5 shadow-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold text-[14px] shrink-0 shadow-xs ring-2 ring-[#5B5BF0]/15">
+                    A
                   </div>
-                  <div className="text-[11px] text-[#6B7280] leading-tight mt-0.5 truncate">
-                    Operations
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-bold text-[#0F1535] leading-tight truncate">
+                      Admin
+                    </div>
+                    <div className="text-[11px] text-[#6B7280] leading-tight mt-0.5 truncate">
+                      Operations
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => onLogout?.()}
-                title="Log out of admin session"
-                aria-label="Logout"
-                className="w-8 h-8 rounded-xl bg-white text-[#6B7280] hover:text-[#EF4444] hover:bg-[#FEE4E2]/50 border border-[#EEF0F6] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => onLogout?.()}
+                  title="Log out of admin session"
+                  aria-label="Logout"
+                  className="w-8 h-8 rounded-xl bg-white text-[#6B7280] hover:text-[#EF4444] hover:bg-[#FEE4E2]/50 border border-[#EEF0F6] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>

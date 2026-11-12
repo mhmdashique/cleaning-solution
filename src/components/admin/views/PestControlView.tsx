@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search, X, Pencil, Trash2 } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
+import { PestPlanItem } from "@/types/opsHub";
 
 export default function PestControlView() {
-  const { pestPlans, addPestPlan, updatePestPlan } = useOpsHub();
+  const { pestPlans, addPestPlan, updatePestPlan, deletePestPlan } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<PestPlanItem | null>(null);
 
   // Form
   const [type, setType] = useState("");
@@ -25,19 +27,38 @@ export default function PestControlView() {
     e.preventDefault();
     if (!type.trim()) return;
 
-    addPestPlan({
-      type,
-      description: desc || "Comprehensive chemical eradication and pest control treatment",
-      price: Number(price) || 800,
-      warrantyMonths: Number(warranty) || 3,
-      status: "Active",
-    });
+    if (editingPlan) {
+      updatePestPlan(editingPlan.id, {
+        type,
+        description: desc || "Comprehensive chemical eradication and pest control treatment",
+        price: Number(price) || 800,
+        warrantyMonths: Number(warranty) || 3,
+      });
+      setEditingPlan(null);
+    } else {
+      addPestPlan({
+        type,
+        description: desc || "Comprehensive chemical eradication and pest control treatment",
+        price: Number(price) || 800,
+        warrantyMonths: Number(warranty) || 3,
+        status: "Active",
+      });
+    }
 
     setType("");
     setDesc("");
     setPrice("800");
     setWarranty("3");
     setShowAddModal(false);
+  };
+
+  const handleOpenEdit = (plan: PestPlanItem) => {
+    setEditingPlan(plan);
+    setType(plan.type);
+    setDesc(plan.description);
+    setPrice(String(plan.price));
+    setWarranty(String(plan.warrantyMonths));
+    setShowAddModal(true);
   };
 
   return (
@@ -119,13 +140,24 @@ export default function PestControlView() {
                     </button>
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <button
-                      type="button"
-                      aria-label="Actions"
-                      className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      ···
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(p)}
+                        className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                        title="Edit plan"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deletePestPlan(p.id)}
+                        className="w-8 h-8 rounded-lg hover:bg-rose-50 text-[#6B7280] hover:text-rose-600 inline-flex items-center justify-center transition-colors cursor-pointer"
+                        title="Delete plan"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -134,15 +166,20 @@ export default function PestControlView() {
         </div>
       </div>
 
-      {/* Add Plan Modal */}
+      {/* Add / Edit Plan Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3">
-              <h2 className="text-[17px] font-bold text-[#0F1535]">Add Pest Plan</h2>
+              <h2 className="text-[17px] font-bold text-[#0F1535]">
+                {editingPlan ? "Edit Pest Plan" : "Add Pest Plan"}
+              </h2>
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingPlan(null);
+                }}
                 className="p-1 text-[#6B7280] hover:text-[#0F1535] rounded-lg"
               >
                 <X className="w-5 h-5" />
@@ -198,7 +235,10 @@ export default function PestControlView() {
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EEF0F6]">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingPlan(null);
+                  }}
                   className="px-4 py-2 rounded-xl text-[#6B7280] font-semibold hover:bg-[#F6F7FD]"
                 >
                   Cancel
@@ -207,7 +247,7 @@ export default function PestControlView() {
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-[#12B76A] hover:bg-[#0EA05C] text-white font-bold transition-all shadow-xs"
                 >
-                  Create Plan
+                  {editingPlan ? "Save Changes" : "Create Plan"}
                 </button>
               </div>
             </form>

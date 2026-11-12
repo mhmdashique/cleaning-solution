@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, ChevronRight, ExternalLink } from "lucide-react";
+import { Search, Bell, ChevronRight, ExternalLink, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 
 interface AdminTopbarProps {
@@ -11,6 +11,8 @@ interface AdminTopbarProps {
   onSearchChange?: (query: string) => void;
   searchQuery?: string;
   onLogout?: () => void;
+  isSidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 const TAB_LABEL_MAP: Record<string, string> = {
@@ -39,6 +41,8 @@ export default function AdminTopbar({
   onSearchChange,
   searchQuery = "",
   onLogout,
+  isSidebarCollapsed,
+  onToggleSidebar,
 }: AdminTopbarProps) {
   const { bookings, customers, services, notifications, markNotificationAsRead, markAllNotificationsAsRead } = useOpsHub();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -116,8 +120,25 @@ export default function AdminTopbar({
   return (
     <header className="border-b border-[#EEF0F6] bg-white px-6 py-3.5 md:px-8 sticky top-0 z-20">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 mx-auto">
-        {/* Left: Functional Breadcrumbs navigation */}
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13.5px]">
+        {/* Left: Sidebar Toggle Button + Functional Breadcrumbs navigation */}
+        <div className="flex items-center gap-3">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              title={isSidebarCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+              aria-label={isSidebarCollapsed ? "Expand sidebar" : "Minimize sidebar"}
+              className="hidden min-[821px]:flex items-center justify-center w-8 h-8 rounded-xl bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] border border-[#EEF0F6] transition-colors cursor-pointer"
+            >
+              {isSidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13.5px]">
           <button
             type="button"
             onClick={() => onNavigateTab?.("overview")}
@@ -175,8 +196,9 @@ export default function AdminTopbar({
             </>
           )}
         </nav>
+      </div>
 
-        {/* Center / Right controls */}
+      {/* Center / Right controls */}
         <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end flex-1 sm:flex-initial">
           {/* Rounded pill search bar with live dropdown */}
           <div className="flex-1 sm:w-72 md:w-80 relative" ref={searchRef}>

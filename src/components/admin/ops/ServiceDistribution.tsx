@@ -25,9 +25,9 @@ export default function ServiceDistribution({
   total,
 }: ServiceDistributionProps) {
   return (
-    <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 shadow-[0_2px_12px_rgba(15,21,53,0.03)] hover:shadow-[0_8px_24px_rgba(15,21,53,0.06)] transition-all duration-200 flex flex-col justify-between">
+    <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 sm:p-7 shadow-[0_2px_12px_rgba(15,21,53,0.03)] hover:shadow-[0_8px_24px_rgba(15,21,53,0.06)] transition-all duration-200 flex flex-col justify-between h-full">
       <div>
-        <h2 className="text-[16px] font-bold text-[#0F1535] mb-2">
+        <h2 className="text-[17px] font-bold text-[#0F1535] mb-1">
           Service Distribution
         </h2>
         <p className="text-[12px] text-[#6B7280]">
@@ -35,7 +35,7 @@ export default function ServiceDistribution({
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-2">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto py-2">
         {/* Donut with total in the center */}
         <div className="relative w-[150px] h-[150px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">

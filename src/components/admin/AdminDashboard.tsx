@@ -63,10 +63,56 @@ function AdminDashboardContent({
   clientNoteStates = {},
 }: AdminDashboardProps) {
   const { bookings: opsBookings, services: opsServices } = useOpsHub();
-  const [activeTab, setActiveTab] = useState<string>("overview");
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
+  // Persist active tab + selected IDs across page reloads via sessionStorage
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("planc_admin_tab") || "overview";
+    }
+    return "overview";
+  });
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("planc_admin_booking_id") || null;
+    }
+    return null;
+  });
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("planc_admin_customer_id") || null;
+    }
+    return null;
+  });
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  // Keep sessionStorage in sync whenever tab/selection changes
+  const handleTabChange = (tab: string) => {
+    sessionStorage.setItem("planc_admin_tab", tab);
+    // Clear sub-selections when navigating away
+    if (tab !== "booking-detail") {
+      sessionStorage.removeItem("planc_admin_booking_id");
+      setSelectedBookingId(null);
+    }
+    if (tab !== "customer-detail") {
+      sessionStorage.removeItem("planc_admin_customer_id");
+      setSelectedCustomerId(null);
+    }
+    setActiveTab(tab);
+  };
+
+  const handleSelectBooking = (id: string) => {
+    sessionStorage.setItem("planc_admin_booking_id", id);
+    sessionStorage.setItem("planc_admin_tab", "booking-detail");
+    setSelectedBookingId(id);
+    setActiveTab("booking-detail");
+  };
+
+  const handleSelectCustomer = (id: string) => {
+    sessionStorage.setItem("planc_admin_customer_id", id);
+    sessionStorage.setItem("planc_admin_tab", "customer-detail");
+    setSelectedCustomerId(id);
+    setActiveTab("customer-detail");
+  };
 
   const [reviews, setReviews] = useState<AdminReview[]>(() => {
     if (dbReviews && dbReviews.length > 0) {
@@ -125,6 +171,10 @@ function AdminDashboardContent({
   }, [dbBookings]);
 
   const handleLogout = async () => {
+    // Clear persisted navigation state on logout
+    sessionStorage.removeItem("planc_admin_tab");
+    sessionStorage.removeItem("planc_admin_booking_id");
+    sessionStorage.removeItem("planc_admin_customer_id");
     await logoutAdminAction();
     window.location.reload();
   };
@@ -136,16 +186,14 @@ function AdminDashboardContent({
     <>
       <AppShell
         activeTab={activeTab}
-        onTabChange={(tab: string) => setActiveTab(tab)}
+        onTabChange={handleTabChange}
         onNavigateTab={(tab: string, recordId?: string) => {
           if (tab === "bookings" && recordId) {
-            setSelectedBookingId(recordId);
-            setActiveTab("booking-detail");
+            handleSelectBooking(recordId);
           } else if (tab === "customers" && recordId) {
-            setSelectedCustomerId(recordId);
-            setActiveTab("customer-detail");
+            handleSelectCustomer(recordId);
           } else {
-            setActiveTab(tab);
+            handleTabChange(tab);
           }
         }}
         counts={{
@@ -161,60 +209,50 @@ function AdminDashboardContent({
         {activeTab === "overview" && (
           <OverviewView
             bookings={bookings}
-            onNavigateToBookings={() => setActiveTab("bookings")}
+            onNavigateToBookings={() => handleTabChange("bookings")}
+            onOpenBookingDetail={(id) => handleSelectBooking(id)}
           />
         )}
 
         {activeTab === "bookings" && (
           <BookingsView
-            onNewBookingClick={() => setActiveTab("add-booking")}
-            onOpenBookingDetail={(id) => {
-              setSelectedBookingId(id);
-              setActiveTab("booking-detail");
-            }}
+            onNewBookingClick={() => handleTabChange("add-booking")}
+            onOpenBookingDetail={(id) => handleSelectBooking(id)}
           />
         )}
 
         {activeTab === "booking-detail" && selectedBookingId && (
           <BookingDetailView
             bookingId={selectedBookingId}
-            onBack={() => setActiveTab("bookings")}
+            onBack={() => handleTabChange("bookings")}
           />
         )}
 
         {activeTab === "add-booking" && (
           <AddBookingView
-            onBack={() => setActiveTab("bookings")}
+            onBack={() => handleTabChange("bookings")}
             onSuccess={() => {
               setToast({
                 id: `toast-${Date.now()}`,
                 text: "Booking created successfully and dispatched to staff!",
               });
-              setActiveTab("bookings");
+              handleTabChange("bookings");
             }}
           />
         )}
 
         {activeTab === "customers" && (
           <CustomersView
-            onOpenCustomerDetail={(id) => {
-              setSelectedCustomerId(id);
-              setActiveTab("customer-detail");
-            }}
+            onOpenCustomerDetail={(id) => handleSelectCustomer(id)}
           />
         )}
 
         {activeTab === "customer-detail" && selectedCustomerId && (
           <CustomerDetailView
             customerId={selectedCustomerId}
-            onBack={() => setActiveTab("customers")}
-            onViewBooking={(bId) => {
-              setSelectedBookingId(bId);
-              setActiveTab("booking-detail");
-            }}
-            onNewBookingForCustomer={() => {
-              setActiveTab("add-booking");
-            }}
+            onBack={() => handleTabChange("customers")}
+            onViewBooking={(bId) => handleSelectBooking(bId)}
+            onNewBookingForCustomer={() => handleTabChange("add-booking")}
           />
         )}
 

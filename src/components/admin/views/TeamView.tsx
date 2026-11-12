@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Phone, Mail, Trash2, X, Shield, Award } from "lucide-react";
+import { Plus, Search, Phone, Mail, Trash2, X, Shield, Award, Pencil } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
+import { TeamMember } from "@/types/opsHub";
 
 export default function TeamView() {
-  const { team, addTeamMember, deleteTeamMember } = useOpsHub();
+  const { team, addTeamMember, updateTeamMember, deleteTeamMember } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -25,18 +27,37 @@ export default function TeamView() {
     e.preventDefault();
     if (!name.trim()) return;
 
-    addTeamMember({
-      name,
-      role,
-      phone: phone || "+91 98460 11223",
-      email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@planc.com`,
-      status: "Active",
-    });
+    if (editingMember) {
+      updateTeamMember(editingMember.id, {
+        name,
+        role,
+        phone: phone || "+91 98460 11223",
+        email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@planc.com`,
+      });
+      setEditingMember(null);
+    } else {
+      addTeamMember({
+        name,
+        role,
+        phone: phone || "+91 98460 11223",
+        email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@planc.com`,
+        status: "Active",
+      });
+    }
 
     setName("");
     setPhone("");
     setEmail("");
     setShowAddModal(false);
+  };
+
+  const handleOpenEdit = (member: TeamMember) => {
+    setEditingMember(member);
+    setName(member.name);
+    setRole(member.role);
+    setPhone(member.phone);
+    setEmail(member.email);
+    setShowAddModal(true);
   };
 
   const getRoleBadge = (role: string) => {
@@ -130,14 +151,24 @@ export default function TeamView() {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => deleteTeamMember(m.id)}
-                      className="w-8 h-8 rounded-lg hover:bg-[#FEE4E2] text-[#6B7280] hover:text-[#F04438] inline-flex items-center justify-center transition-colors cursor-pointer"
-                      title="Remove member"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(m)}
+                        className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                        title="Edit member"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteTeamMember(m.id)}
+                        className="w-8 h-8 rounded-lg hover:bg-[#FEE4E2] text-[#6B7280] hover:text-[#F04438] inline-flex items-center justify-center transition-colors cursor-pointer"
+                        title="Remove member"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -146,15 +177,20 @@ export default function TeamView() {
         </div>
       </div>
 
-      {/* Add Member Modal */}
+      {/* Add / Edit Member Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white border border-[#EEF0F6] rounded-[24px] max-w-md w-full shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3">
-              <h3 className="text-[19px] font-bold text-[#0F1535]">Add Team Member</h3>
+              <h3 className="text-[19px] font-bold text-[#0F1535]">
+                {editingMember ? "Edit Team Member" : "Add Team Member"}
+              </h3>
               <button
                 type="button"
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingMember(null);
+                }}
                 className="w-8 h-8 rounded-full bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -213,7 +249,10 @@ export default function TeamView() {
               <div className="flex justify-end gap-3 pt-3 border-t border-[#EEF0F6]">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingMember(null);
+                  }}
                   className="px-5 py-2.5 rounded-xl border border-[#EEF0F6] bg-white text-[#6B7280] hover:bg-[#F6F7FD] text-[14px] font-semibold cursor-pointer"
                 >
                   Cancel
@@ -222,7 +261,7 @@ export default function TeamView() {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-[#12B76A] hover:bg-[#0EA05C] text-white text-[14px] font-semibold shadow-xs cursor-pointer"
                 >
-                  Add Member
+                  {editingMember ? "Save Changes" : "Add Member"}
                 </button>
               </div>
             </form>

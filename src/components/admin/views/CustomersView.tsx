@@ -1,17 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, CalendarCheck, ArrowRight } from "lucide-react";
+import { Plus, Search, CalendarCheck, ArrowRight, Pencil, Trash2 } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
+import { Customer } from "@/types/opsHub";
 
 interface CustomersViewProps {
   onOpenCustomerDetail?: (customerId: string) => void;
 }
 
 export default function CustomersView({ onOpenCustomerDetail }: CustomersViewProps) {
-  const { customers, bookings, addCustomer } = useOpsHub();
+  const { customers, bookings, addCustomer, updateCustomer, deleteCustomer } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [deleteCandidateId, setDeleteCandidateId] = useState<string | null>(null);
 
   // Form state
   const [name, setName] = useState("");
@@ -35,21 +38,43 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
     e.preventDefault();
     if (!name.trim() || !phone.trim()) return;
 
-    addCustomer({
-      name,
-      phone,
-      email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
-      address: address || "Trivandrum, Kerala",
-      district,
-      status: "Active",
-      notes: "Newly registered customer.",
-    });
+    if (editingCustomer) {
+      updateCustomer(editingCustomer.id, {
+        name,
+        phone,
+        email,
+        address,
+        district,
+      });
+      setEditingCustomer(null);
+    } else {
+      addCustomer({
+        name,
+        phone,
+        email: email || `${name.toLowerCase().replace(/\s+/g, ".")}@gmail.com`,
+        address: address || "Trivandrum, Kerala",
+        district,
+        status: "Active",
+        notes: "Newly registered customer.",
+      });
+    }
 
     setName("");
     setPhone("");
     setEmail("");
     setAddress("");
     setShowAddModal(false);
+  };
+
+  const handleOpenEdit = (customer: Customer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingCustomer(customer);
+    setName(customer.name);
+    setPhone(customer.phone);
+    setEmail(customer.email);
+    setAddress(customer.address);
+    setDistrict(customer.district || "Thiruvananthapuram");
+    setShowAddModal(true);
   };
 
   return (
@@ -147,11 +172,36 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
                         {c.status}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-right">
-                      <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[#5B5BF0] group-hover:underline">
-                        View Details
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
+                    <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onOpenCustomerDetail?.(c.id)}
+                          className="px-2.5 py-1.5 rounded-lg bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <span>View</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEdit(c, e)}
+                          title="Edit Customer"
+                          className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteCandidateId(c.id);
+                          }}
+                          title="Delete Customer"
+                          className="w-8 h-8 rounded-lg hover:bg-rose-50 text-[#6B7280] hover:text-rose-600 inline-flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -168,11 +218,13 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
         </div>
       </div>
 
-      {/* Add Customer Modal */}
+      {/* Add / Edit Customer Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white border border-[#EEF0F6] rounded-[24px] max-w-md w-full shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-150">
-            <h3 className="text-[18px] font-bold text-[#0F1535]">Add New Customer</h3>
+            <h3 className="text-[18px] font-bold text-[#0F1535]">
+              {editingCustomer ? "Edit Customer" : "Add New Customer"}
+            </h3>
             <form onSubmit={handleSubmit} className="space-y-4 text-[13.5px]">
               <div>
                 <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">
@@ -243,7 +295,10 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
               <div className="flex items-center justify-end gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingCustomer(null);
+                  }}
                   className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer"
                 >
                   Cancel
@@ -252,10 +307,41 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
                   type="submit"
                   className="px-5 py-2 rounded-xl bg-[#12B76A] hover:bg-[#0EA05C] text-white font-semibold cursor-pointer"
                 >
-                  Create Customer
+                  {editingCustomer ? "Save Changes" : "Create Customer"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteCandidateId && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <h3 className="text-[17px] font-bold text-[#0F1535]">Delete Customer?</h3>
+            <p className="text-[13.5px] text-[#6B7280]">
+              Are you sure you want to remove this customer record? All associated contact information will be deleted.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteCandidateId(null)}
+                className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteCustomer(deleteCandidateId);
+                  setDeleteCandidateId(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ActionLoadingLink from "@/components/ui/ActionLoadingLink";
 import Image from "next/image";
 import { Service } from "@/types";
 import { ArrowRight } from "lucide-react";
@@ -49,20 +50,24 @@ export default function FeaturedServices({ services }: { services: Service[] }) 
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
-                  <Link
+                  <ActionLoadingLink
                     href={`/services/${service.slug}`}
+                    loadingLabel={`Opening ${service.title}...`}
+                    showInlineSpinner
                     className="text-xs font-semibold text-slate-500 hover:text-slate-900"
                   >
                     View Details
-                  </Link>
+                  </ActionLoadingLink>
 
-                  <Link
+                  <ActionLoadingLink
                     href={`/contact?service=${encodeURIComponent(service.title)}`}
+                    loadingLabel={`Booking ${service.title}...`}
+                    showInlineSpinner
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs transition-colors shadow-2xs"
                   >
                     <span>Book Service</span>
                     <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  </ActionLoadingLink>
                 </div>
               </div>
             </div>

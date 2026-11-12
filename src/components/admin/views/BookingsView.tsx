@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Eye,
   ArrowRight,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 import { BookingStatusType } from "@/types/opsHub";
@@ -21,10 +23,11 @@ export default function BookingsView({
   onNewBookingClick,
   onOpenBookingDetail,
 }: BookingsViewProps) {
-  const { bookings, customers, services, updateBookingStatus } = useOpsHub();
+  const { bookings, customers, services, updateBookingStatus, deleteBooking } = useOpsHub();
   const [activeTab, setActiveTab] = useState<"All" | "Upcoming" | "Completed" | "Cancelled">("All");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
@@ -202,14 +205,32 @@ export default function BookingsView({
                         )}
                       </td>
                       <td className="py-4 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          onClick={() => onOpenBookingDetail?.(b.id)}
-                          className="px-3 py-1.5 rounded-lg bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <span>Manage</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onOpenBookingDetail?.(b.id)}
+                            className="px-3 py-1.5 rounded-lg bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <span>Manage</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenBookingDetail?.(b.id)}
+                            title="Edit booking"
+                            className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteId(b.id)}
+                            title="Delete booking"
+                            className="w-8 h-8 rounded-lg hover:bg-rose-50 text-[#6B7280] hover:text-rose-600 inline-flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -235,6 +256,37 @@ export default function BookingsView({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <h3 className="text-[17px] font-bold text-[#0F1535]">Delete Booking?</h3>
+            <p className="text-[13.5px] text-[#6B7280]">
+              Are you sure you want to delete booking <span className="font-mono font-semibold text-[#5B5BF0]">{deleteId}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteBooking(deleteId);
+                  setDeleteId(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

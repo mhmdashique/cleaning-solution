@@ -295,52 +295,71 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
         {/* Left Column (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Main Booking Header Card */}
-          <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.06)] space-y-5">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.04)] space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EEF0F6] pb-4">
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[16px] font-bold text-[#5B5BF0] bg-[#EEF0FF] px-3 py-1 rounded-lg">
+                <span className="font-mono text-[15px] font-bold text-[#5B5BF0] bg-[#EEF0FF] border border-[#5B5BF0]/15 px-3 py-1 rounded-xl shadow-2xs">
                   {booking.id}
                 </span>
-                <span className="text-[13px] text-[#6B7280]">
+                <span className="text-[12.5px] font-medium text-[#6B7280]">
                   Created {booking.createdAt}
                 </span>
               </div>
 
               {/* Status Selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] font-semibold text-[#6B7280]">Status:</span>
-                <select
-                  value={booking.status}
-                  onChange={(e) => updateBookingStatus(booking.id, e.target.value as BookingStatusType)}
-                  className="px-3.5 py-1.5 rounded-full text-[13px] font-bold border border-transparent outline-none cursor-pointer bg-[#F6F7FD] text-[#0F1535] focus:border-[#5B5BF0] shadow-xs"
-                >
-                  <option value="Confirmed">Confirmed</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
+              <div className="flex items-center gap-2.5">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF]">Status</span>
+                <div className="relative">
+                  <select
+                    value={booking.status}
+                    onChange={(e) => updateBookingStatus(booking.id, e.target.value as BookingStatusType)}
+                    className={`pl-3.5 pr-8 py-1.5 rounded-full text-[13px] font-bold border transition-all outline-none cursor-pointer appearance-none shadow-2xs ${
+                      booking.status === "Completed"
+                        ? "bg-[#ECFDF3] border-[#A6F4C5] text-[#027A48]"
+                        : booking.status === "In Progress"
+                        ? "bg-[#EFF8FF] border-[#B2DDFF] text-[#175CD3]"
+                        : booking.status === "Cancelled"
+                        ? "bg-[#FEF3F2] border-[#FECDCA] text-[#B42318]"
+                        : "bg-[#FFF4ED] border-[#FDDCAB] text-[#B54708]"
+                    }`}
+                  >
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-current opacity-70 text-[10px]">
+                    ▼
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Service & Schedule */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13.5px]">
-              <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-1">
-                <span className="text-[12px] font-bold uppercase tracking-wider text-[#6B7280]">Service Offering</span>
-                <div className="text-[16px] font-bold text-[#0F1535]">
+              <div className="p-4 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">
+                  Service Offering
+                </span>
+                <div className="text-[16px] font-extrabold text-[#0F1535]">
                   {service?.name || booking.serviceName || "General Service"}
                 </div>
-                <div className="text-[12.5px] text-[#5B5BF0] font-semibold">
-                  Category: {service?.category || "Cleaning"} · {service?.duration || "2-3 hrs"}
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EEF0FF] text-[12px] text-[#5B5BF0] font-semibold w-fit">
+                  <span>{service?.category || "Cleaning"}</span>
+                  <span>·</span>
+                  <span>{service?.duration || "2–3 hrs"}</span>
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-1">
-                <span className="text-[12px] font-bold uppercase tracking-wider text-[#6B7280]">Service Appointment</span>
-                <div className="text-[16px] font-bold text-[#0F1535] font-mono">
+              <div className="p-4 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF]">
+                  Service Appointment
+                </span>
+                <div className="text-[16px] font-extrabold text-[#0F1535] font-mono">
                   {booking.date}
                 </div>
-                <div className="text-[13px] text-[#6B7280] flex items-center gap-1.5">
+                <div className="text-[12.5px] text-[#6B7280] font-medium flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#5B5BF0]" />
                   <span>{booking.time}</span>
                 </div>
@@ -349,55 +368,83 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
           </div>
 
           {/* Customer & Address Details Card */}
-          <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.06)] space-y-4">
-            <h3 className="text-[16px] font-bold text-[#0F1535] border-b border-[#EEF0F6] pb-3">
-              Customer Contact &amp; Dispatch Location
-            </h3>
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.04)] space-y-5">
+            <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3.5">
+              <h3 className="text-[16px] font-bold text-[#0F1535]">
+                Customer Contact &amp; Dispatch Location
+              </h3>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] font-mono">
+                {customer?.id || booking.customerId}
+              </span>
+            </div>
 
-            <div className="space-y-3 text-[14px]">
-              <div className="flex items-center gap-3 text-[#0F1535]">
-                <div className="w-8 h-8 rounded-lg bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold text-[14px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[13.5px]">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6]">
+                <div className="w-9 h-9 rounded-xl bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold text-[14px] shrink-0">
                   <User className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="font-bold text-[#0F1535]">{customer?.name || booking.customerName || "Customer Name"}</span>
-                  <span className="text-[12px] text-[#6B7280] block font-mono">ID: {customer?.id || booking.customerId}</span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-0.5">
+                    Customer Name
+                  </span>
+                  <div className="font-bold text-[14px] text-[#0F1535] truncate">
+                    {customer?.name || booking.customerName || "Customer Name"}
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-[#0F1535]">
-                <div className="w-8 h-8 rounded-lg bg-[#ECFDF3] text-[#12B76A] flex items-center justify-center font-bold">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6]">
+                <div className="w-9 h-9 rounded-xl bg-[#ECFDF3] text-[#12B76A] flex items-center justify-center font-bold shrink-0">
                   <Phone className="w-4 h-4" />
                 </div>
-                <a href={`tel:${customer?.phone || booking.customerPhone}`} className="font-semibold text-[#0F1535] hover:text-[#12B76A] transition-colors">
-                  {customer?.phone || booking.customerPhone || "+91 94471 23456"}
-                </a>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-0.5">
+                    Phone Number
+                  </span>
+                  <a
+                    href={`tel:${customer?.phone || booking.customerPhone}`}
+                    className="font-bold text-[14px] text-[#0F1535] hover:text-[#12B76A] transition-colors truncate block font-mono"
+                  >
+                    {customer?.phone || booking.customerPhone || "+91 94471 23456"}
+                  </a>
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 text-[#0F1535]">
-                <div className="w-8 h-8 rounded-lg bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6]">
+                <div className="w-9 h-9 rounded-xl bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center font-bold shrink-0">
                   <Mail className="w-4 h-4" />
                 </div>
-                <span>{customer?.email || "customer@example.com"}</span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-0.5">
+                    Email Address
+                  </span>
+                  <div className="font-medium text-[13px] text-[#0F1535] truncate">
+                    {customer?.email || booking.customerEmail || "Not provided"}
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-start gap-3 text-[#0F1535]">
-                <div className="w-8 h-8 rounded-lg bg-[#FFF4E5] text-[#F79009] flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6]">
+                <div className="w-9 h-9 rounded-xl bg-[#FFF4E5] text-[#F79009] flex items-center justify-center font-bold shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="font-semibold">{booking.address || customer?.address || "Trivandrum, Kerala"}</span>
-                  <span className="text-[12px] text-[#6B7280] block">{customer?.district || "Thiruvananthapuram"}</span>
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] block mb-0.5">
+                    Service Address
+                  </span>
+                  <div className="font-semibold text-[13px] text-[#0F1535] line-clamp-2">
+                    {booking.address || customer?.address || "Trivandrum, Kerala"}
+                  </div>
                 </div>
               </div>
             </div>
 
             {booking.notes && (
-              <div className="p-4 rounded-xl bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-[13px] mt-2">
-                <span className="font-bold uppercase tracking-wider block text-[11px] mb-1">
+              <div className="p-4 rounded-2xl bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] text-[13px] space-y-1">
+                <span className="font-bold uppercase tracking-wider block text-[11px]">
                   Customer Notes &amp; Access Instructions:
                 </span>
-                <p>{booking.notes}</p>
+                <p className="leading-relaxed">{booking.notes}</p>
               </div>
             )}
           </div>
@@ -406,17 +453,19 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
         {/* Right Column: Pricing, Extras, Advance & Invoice (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
           {/* Financial Breakdown Card */}
-          <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.06)] space-y-5">
-            <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 sm:p-7 shadow-[0_4px_24px_rgba(91,91,240,0.04)] space-y-5">
+            <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3.5">
               <div>
                 <h3 className="text-[17px] font-bold text-[#0F1535]">Order Financials</h3>
-                <p className="text-[12.5px] text-[#6B7280]">Manual pricing, advances and extra charges</p>
+                <p className="text-[12px] text-[#6B7280] mt-0.5">Base pricing, advances and extra charges</p>
               </div>
-              <Receipt className="w-5 h-5 text-[#5B5BF0]" />
+              <div className="w-9 h-9 rounded-xl bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center shrink-0">
+                <Receipt className="w-4 h-4" />
+              </div>
             </div>
 
             {/* Base Price Row with Manual Edit */}
-            <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-2">
+            <div className="p-4 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6] space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-bold text-[#0F1535]">Base Service Price</span>
                 {!isEditingBasePrice ? (
@@ -430,7 +479,7 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
                         setBasePriceInput(String(basePrice));
                         setIsEditingBasePrice(true);
                       }}
-                      className="p-1 rounded-md text-[#5B5BF0] hover:bg-[#EEF0FF] transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-[#5B5BF0] hover:bg-[#EEF0FF] transition-colors cursor-pointer"
                       title="Edit base price"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -474,15 +523,15 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
                 <button
                   type="button"
                   onClick={() => setShowAddExtraModal(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>Add Extras</span>
                 </button>
               </div>
 
               {extraCharges.length === 0 ? (
-                <div className="py-2 text-[12.5px] text-[#9CA3AF] italic">
+                <div className="py-2.5 px-3 rounded-xl bg-[#F8F9FC] border border-dashed border-[#EEF0F6] text-[12.5px] text-[#9CA3AF] text-center italic">
                   No additional extra charges added.
                 </div>
               ) : (
@@ -490,10 +539,10 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
                   {extraCharges.map((ext) => (
                     <div
                       key={ext.id}
-                      className="flex items-center justify-between p-2.5 rounded-lg bg-[#F8F9FC] border border-[#EEF0F6] text-[13px]"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#F8F9FC] border border-[#EEF0F6] text-[13px]"
                     >
-                      <span className="font-medium text-[#0F1535]">{ext.title}</span>
-                      <div className="flex items-center gap-2">
+                      <span className="font-semibold text-[#0F1535]">{ext.title}</span>
+                      <div className="flex items-center gap-2.5">
                         <span className="font-bold text-[#0F1535]">+₹{ext.amount.toLocaleString("en-IN")}</span>
                         <button
                           type="button"
@@ -510,7 +559,7 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
             </div>
 
             {/* Advance Payment Section */}
-            <div className="space-y-2.5 pt-2 border-t border-[#EEF0F6]">
+            <div className="space-y-2.5 pt-3 border-t border-[#EEF0F6]">
               <div className="flex items-center justify-between">
                 <span className="text-[13px] font-bold text-[#0F1535]">Advance Payment Received</span>
                 <button
@@ -519,44 +568,44 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
                     setAdvanceInput(String(advancePaid));
                     setShowAddAdvanceModal(true);
                   }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#ECFDF3] hover:bg-[#D5EBDF] text-[#12B76A] text-[12px] font-bold transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#ECFDF3] hover:bg-[#D5EBDF] text-[#12B76A] text-[12px] font-bold transition-colors cursor-pointer"
                 >
-                  <Plus className="w-3 h-3" />
+                  <Plus className="w-3.5 h-3.5" />
                   <span>{advancePaid > 0 ? "Edit Advance" : "Add Advance"}</span>
                 </button>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#F8F9FC] border border-[#EEF0F6] flex items-center justify-between">
-                <span className="text-[13px] text-[#6B7280]">Advance Deposit</span>
-                <span className="text-[15px] font-bold text-[#12B76A]">
+              <div className="p-3.5 rounded-2xl bg-[#F8F9FC] border border-[#EEF0F6] flex items-center justify-between">
+                <span className="text-[13px] font-medium text-[#6B7280]">Advance Deposit</span>
+                <span className="text-[15px] font-extrabold text-[#12B76A] font-mono">
                   -₹{advancePaid.toLocaleString("en-IN")}
                 </span>
               </div>
             </div>
 
             {/* Final Calculation Summary */}
-            <div className="space-y-2 pt-3 border-t-2 border-[#EEF0F6]">
+            <div className="space-y-2.5 pt-4 border-t border-[#EEF0F6]">
               <div className="flex justify-between text-[13px] text-[#6B7280]">
                 <span>Total Order Value</span>
-                <span className="font-bold text-[#0F1535]">₹{totalOrderValue.toLocaleString("en-IN")}</span>
+                <span className="font-bold text-[#0F1535] font-mono">₹{totalOrderValue.toLocaleString("en-IN")}</span>
               </div>
 
-              <div className="flex justify-between items-center p-3.5 rounded-xl bg-[#F6F7FD] text-[#0F1535]">
+              <div className="flex justify-between items-center p-4 rounded-2xl bg-gradient-to-br from-[#F6F7FD] to-[#EEF0FF] border border-[#E0E4FF] text-[#0F1535]">
                 <div>
-                  <span className="text-[12px] font-bold uppercase tracking-wider block text-[#6B7280]">
+                  <span className="text-[11px] font-bold uppercase tracking-wider block text-[#6B7280] mb-0.5">
                     Remaining Balance Due
                   </span>
-                  <span className="text-[20px] font-extrabold text-[#0F1535]">
+                  <span className="text-[22px] font-black text-[#0F1535] font-mono tracking-tight">
                     ₹{balanceDue.toLocaleString("en-IN")}
                   </span>
                 </div>
 
                 {isPaidInFull ? (
-                  <span className="px-3 py-1 rounded-full bg-[#E7F8F0] text-[#12B76A] text-[12px] font-extrabold tracking-wide">
+                  <span className="px-3 py-1 rounded-full bg-[#E7F8F0] border border-[#A6F4C5] text-[#12B76A] text-[11.5px] font-extrabold tracking-wide">
                     PAID IN FULL
                   </span>
                 ) : (
-                  <span className="px-3 py-1 rounded-full bg-[#FFF4E5] text-[#F79009] text-[12px] font-bold">
+                  <span className="px-3 py-1 rounded-full bg-[#FFF4ED] border border-[#FDDCAB] text-[#B54708] text-[11.5px] font-bold">
                     PENDING BALANCE
                   </span>
                 )}

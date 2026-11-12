@@ -9,6 +9,7 @@
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import ActionLoadingLink from "@/components/ui/ActionLoadingLink";
 import {
   Phone,
   Menu,
@@ -129,19 +130,21 @@ function Navbar() {
           {/* Right Action Cluster — Track Booking + Book Now */}
           <div className="hidden items-center gap-3 sm:flex">
             {/* Track Booking shortcut */}
-            <Link
+            <ActionLoadingLink
               href="/track"
+              loadingLabel="Opening Tracker..."
               className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:text-brand-700 ${
                 isHome ? "bg-white/80 shadow-sm backdrop-blur-sm" : ""
               }`}
             >
               <Compass className="w-4 h-4 text-brand-600" />
               <span>Track Booking</span>
-            </Link>
+            </ActionLoadingLink>
 
             {/* Book Now — Outline pill with Calendar icon & arrow */}
-            <Link
+            <ActionLoadingLink
               href="/contact"
+              loadingLabel="Loading Booking Form..."
               className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold transition-all active:scale-[0.98] sm:text-sm ${
                 isHome
                   ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-sm hover:from-brand-700 hover:to-brand-800"
@@ -153,18 +156,19 @@ function Navbar() {
               />
               <span>Book Now</span>
               <span className={isHome ? "text-white" : "text-brand-600"}>→</span>
-            </Link>
+            </ActionLoadingLink>
           </div>
 
           {/* Mobile Menu Triggers */}
           <div className="flex items-center gap-2 lg:hidden">
-            <Link
+            <ActionLoadingLink
               href="/track"
+              loadingLabel="Opening Tracker..."
               className="p-2 rounded-xl bg-brand-50 text-brand-800 border border-brand-100"
               aria-label="Track Booking"
             >
               <Compass className="w-4 h-4 text-brand-700" />
-            </Link>
+            </ActionLoadingLink>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 focus:outline-none transition-colors"
@@ -205,20 +209,22 @@ function Navbar() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
-            <Link
+            <ActionLoadingLink
               href="/track"
+              loadingLabel="Opening Tracker..."
               className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-full border border-slate-200 bg-slate-50 text-slate-800 font-bold text-xs text-center"
             >
               <Compass className="w-3.5 h-3.5 text-brand-600" />
               <span>Track Booking</span>
-            </Link>
-            <Link
+            </ActionLoadingLink>
+            <ActionLoadingLink
               href="/contact"
+              loadingLabel="Opening Booking Form..."
               className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-full bg-brand-700 text-white font-bold text-xs text-center shadow-xs"
             >
               <Calendar className="w-3.5 h-3.5" />
               <span>Book Online</span>
-            </Link>
+            </ActionLoadingLink>
           </div>
         </div>
       )}

@@ -31,55 +31,56 @@ export default function RevenueOverview({
   const latest = data[data.length - 1];
 
   return (
-    <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 shadow-[0_2px_12px_rgba(15,21,53,0.03)] hover:shadow-[0_8px_24px_rgba(15,21,53,0.06)] transition-all duration-200">
-      {/* Top Header: Title + Dropdown */}
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-[10px] bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center shrink-0">
-            <BarChart3 className="w-4 h-4" />
-          </div>
-          <h2 className="text-[16px] font-bold text-[#0F1535]">
-            Revenue Overview
-          </h2>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Legend dots */}
-          <div className="hidden sm:flex items-center gap-3 text-[12px] text-[#6B7280] font-medium">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#12B76A]" />
-              This Period
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#D1D5DB]" />
-              Last Period
-            </span>
+    <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 sm:p-7 shadow-[0_2px_12px_rgba(15,21,53,0.03)] hover:shadow-[0_8px_24px_rgba(15,21,53,0.06)] transition-all duration-200 flex flex-col justify-between h-full">
+      <div>
+        {/* Top Header: Title + Dropdown */}
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4.5 h-4.5" />
+            </div>
+            <h2 className="text-[17px] font-bold text-[#0F1535]">
+              Revenue Overview
+            </h2>
           </div>
 
-          <select
-            defaultValue="Last 6 Months"
-            className="text-[12.5px] text-[#0F1535] font-medium border border-[#EEF0F6] rounded-xl bg-[#F6F7FD] px-3 py-1.5 outline-none focus:border-[#5B5BF0] cursor-pointer"
-          >
-            <option>Last 6 Months</option>
-            <option>Last 3 Months</option>
-            <option>Last 12 Months</option>
-          </select>
-        </div>
-      </div>
+          <div className="flex items-center gap-3">
+            {/* Legend dots */}
+            <div className="hidden sm:flex items-center gap-3 text-[12px] text-[#6B7280] font-medium">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#12B76A]" />
+                This Period
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#D1D5DB]" />
+                Last Period
+              </span>
+            </div>
 
-      {/* Revenue Number + Percentage Delta */}
-      <div className="flex items-baseline gap-3 mb-4">
-        <div className="text-[32px] font-bold text-[#0F1535] tracking-tight">
-          {total}
+            <select
+              defaultValue="Last 6 Months"
+              className="text-[12.5px] text-[#0F1535] font-medium border border-[#EEF0F6] rounded-xl bg-[#F6F7FD] px-3 py-1.5 outline-none focus:border-[#5B5BF0] cursor-pointer"
+            >
+              <option>Last 6 Months</option>
+              <option>Last 3 Months</option>
+              <option>Last 12 Months</option>
+            </select>
+          </div>
         </div>
-        <div className="text-[13px] font-semibold text-[#12B76A] flex items-center gap-1">
-          <span>↑</span>
-          <span>{change.replace(/^[+\-↑]\s*/, "")} from last period</span>
+
+        {/* Revenue Number + Percentage Delta */}
+        <div className="flex items-baseline gap-3 mb-4">
+          <div className="text-[32px] font-extrabold text-[#0F1535] tracking-tight">
+            {total}
+          </div>
+          <div className="text-[13px] font-semibold text-[#12B76A] flex items-center gap-1">
+            <span>{change}</span>
+          </div>
         </div>
       </div>
 
       {/* Area Chart: May - Oct on x-axis, 0 - 5L on y-axis, dot markers, light green gradient fill */}
-      <div className="w-full h-[240px] relative">
+      <div className="w-full h-[220px] relative mt-auto">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}

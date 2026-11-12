@@ -3,6 +3,7 @@ import "./globals.css";
 import { NavbarShell, FooterShell } from "@/components/layout/ClientShell";
 import { LocalBusinessJsonLd } from "@/components/seo/JsonLd";
 import { getApprovedReviews, getServices } from "@/lib/data/store";
+import { NavigationLoadingProvider } from "@/context/NavigationLoadingContext";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -110,10 +111,12 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
-        <LocalBusinessJsonLd aggregateRating={aggregateRating} />
-        <NavbarShell />
-        <main className="flex-1 flex flex-col min-h-0">{children}</main>
-        <FooterShell services={footerServices} />
+        <NavigationLoadingProvider>
+          <LocalBusinessJsonLd aggregateRating={aggregateRating} />
+          <NavbarShell />
+          <main className="flex-1 flex flex-col min-h-0">{children}</main>
+          <FooterShell services={footerServices} />
+        </NavigationLoadingProvider>
       </body>
     </html>
   );

@@ -11,18 +11,19 @@ import DashboardKpiCard from "../ops/DashboardKpiCard";
 import RevenueOverview from "../ops/RevenueOverview";
 import ServiceDistribution from "../ops/ServiceDistribution";
 import DashboardRecentBookings from "../ops/DashboardRecentBookings";
-import UpcomingAppointments from "../ops/UpcomingAppointments";
-import CalendarPanel from "../ops/Calendar";
+import InteractiveCalendarSchedule from "../ops/InteractiveCalendarSchedule";
 import { useOpsHub } from "@/context/OpsHubContext";
 import { AdminBooking } from "@/types/admin";
 
 interface OverviewViewProps {
   bookings?: AdminBooking[];
   onNavigateToBookings?: (filter?: string) => void;
+  onOpenBookingDetail?: (bookingId: string) => void;
 }
 
 export default function OverviewView({
   onNavigateToBookings,
+  onOpenBookingDetail,
 }: OverviewViewProps) {
   const { bookings, customers, services, payments } = useOpsHub();
 
@@ -200,7 +201,7 @@ export default function OverviewView({
         </div>
       </div>
 
-      {/* BOTTOM ROW: Recent Bookings + Upcoming Appointments + Mini Calendar */}
+      {/* BOTTOM ROW: Recent Bookings (Left, 5 cols) + Interactive Calendar Schedule (Right, 7 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
         {/* Recent Bookings Card (5 cols) */}
         <div className="lg:col-span-5 flex flex-col">
@@ -210,14 +211,9 @@ export default function OverviewView({
           />
         </div>
 
-        {/* Upcoming Appointments Card (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col">
-          <UpcomingAppointments appointments={upcomingRows} />
-        </div>
-
-        {/* Mini Calendar Card (3 cols) */}
-        <div className="lg:col-span-3 flex flex-col">
-          <CalendarPanel />
+        {/* Interactive Calendar with Pulsing Booking Indicator & Day's Work Details (7 cols) */}
+        <div className="lg:col-span-7 flex flex-col">
+          <InteractiveCalendarSchedule onOpenBookingDetail={onOpenBookingDetail} />
         </div>
       </div>
     </div>
