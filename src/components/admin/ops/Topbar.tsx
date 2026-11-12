@@ -10,7 +10,7 @@ interface TopbarProps {
 export default function Topbar({
   title = "Overview",
   subtitle = "Cleaning and pest control dispatch in Trivandrum",
-  awaitingCount = 1,
+  awaitingCount = 0,
   operatingHours = "Dispatch 7:00 AM – 9:00 PM",
 }: TopbarProps) {
   return (

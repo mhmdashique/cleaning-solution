@@ -1,299 +1,418 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bell, ChevronRight, ExternalLink, Calendar, Star, MessageSquare } from "lucide-react";
-import { AdminTab } from "@/types/admin";
+import { Search, Bell, ChevronRight, ExternalLink } from "lucide-react";
+import { useOpsHub } from "@/context/OpsHubContext";
 
-export type NotificationType = "booking" | "review" | "note";
-
-export interface NotificationItem {
-  id: string;
-  type: NotificationType;
-  title: string;
-  time: string;
-  description: string;
-  read: boolean;
-  targetTab: AdminTab;
-  filter?: string;
+interface AdminTopbarProps {
+  activeTab: string;
+  pendingCount: number;
+  onNavigateTab?: (tab: string, filter?: string) => void;
+  onSearchChange?: (query: string) => void;
+  searchQuery?: string;
+  onLogout?: () => void;
 }
 
-const TAB_LABELS: Record<AdminTab, string> = {
-  overview: "Overview",
+const TAB_LABEL_MAP: Record<string, string> = {
+  overview: "Dashboard",
   bookings: "Bookings",
+  "booking-detail": "Booking Details",
+  "add-booking": "New Booking",
+  customers: "Customers",
+  "customer-detail": "Customer Profile",
   services: "Services",
   reviews: "Reviews",
   blog: "Articles and blog",
+  articles: "Articles and blog",
   messages: "Client notes",
+  "client-notes": "Client notes",
+  payments: "Payments",
+  reports: "Reports",
+  settings: "Settings",
+  notifications: "Notifications",
 };
-
-function getTodayLabel() {
-  return new Date().toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-interface AdminTopbarProps {
-  activeTab: AdminTab;
-  pendingCount: number;
-  onNavigateTab?: (tab: AdminTab, filter?: string) => void;
-  onNavigateToBookings?: (filter: string) => void;
-}
 
 export default function AdminTopbar({
   activeTab,
   pendingCount,
   onNavigateTab,
-  onNavigateToBookings,
+  onSearchChange,
+  searchQuery = "",
+  onLogout,
 }: AdminTopbarProps) {
+  const { bookings, customers, services, notifications, markNotificationAsRead, markAllNotificationsAsRead } = useOpsHub();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: "notif-1",
-      type: "booking",
-      title: "New booking PC-8421 received",
-      time: "10m ago",
-      description: "Full home deep cleaning requested in Pattom, Trivandrum.",
-      read: false,
-      targetTab: "bookings",
-      filter: "Pending",
-    },
-    {
-      id: "notif-2",
-      type: "review",
-      title: "New customer review pending",
-      time: "35m ago",
-      description: "5-star review submitted for Sofa Shampooing in Kazhakkoottam.",
-      read: false,
-      targetTab: "reviews",
-    },
-    {
-      id: "notif-3",
-      type: "note",
-      title: "New client note logged",
-      time: "1h ago",
-      description: "Special request for balcony glass tracks cleaning on booking PC-8419.",
-      read: false,
-      targetTab: "messages",
-    },
-  ]);
-
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        popoverRef.current &&
-        !popoverRef.current.contains(event.target as Node)
-      ) {
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
     }
-    if (showNotifications) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showNotifications]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const q = localQuery.trim().toLowerCase();
+  const matchedBookings = q
+    ? bookings.filter(
+        (b) =>
+          b.id.toLowerCase().includes(q) ||
+          b.address.toLowerCase().includes(q) ||
+          (b.customerName || "").toLowerCase().includes(q) ||
+          (b.serviceName || "").toLowerCase().includes(q)
+      ).slice(0, 3)
+    : [];
+
+  const matchedCustomers = q
+    ? customers.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.phone.toLowerCase().includes(q) ||
+          c.email.toLowerCase().includes(q) ||
+          c.address.toLowerCase().includes(q)
+      ).slice(0, 3)
+    : [];
+
+  const matchedServices = q
+    ? services.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.category.toLowerCase().includes(q)
+      ).slice(0, 3)
+    : [];
+
+  const hasSearchResults =
+    q.length > 0 &&
+    (matchedBookings.length > 0 || matchedCustomers.length > 0 || matchedServices.length > 0);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const handleNotificationClick = (notif: NotificationItem) => {
-    // mark as read
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notif.id ? { ...n, read: true } : n))
-    );
+  const handleNotificationClick = (notifId: string, type: string) => {
+    markNotificationAsRead(notifId);
     setShowNotifications(false);
 
-    if (onNavigateTab) {
-      onNavigateTab(notif.targetTab, notif.filter);
-    } else if (notif.targetTab === "bookings" && onNavigateToBookings) {
-      onNavigateToBookings(notif.filter || "all");
+    if (type === "booking") {
+      onNavigateTab?.("bookings");
+    } else if (type === "customer") {
+      onNavigateTab?.("customers");
+    } else if (type === "payment") {
+      onNavigateTab?.("payments");
+    } else {
+      onNavigateTab?.("notifications");
     }
   };
 
-  const todayLabel = getTodayLabel();
-  const pageLabel = TAB_LABELS[activeTab];
-
-  const getTypeIcon = (type: NotificationType) => {
-    switch (type) {
-      case "booking":
-        return <Calendar className="w-3.5 h-3.5 text-[#3fbf97]" />;
-      case "review":
-        return <Star className="w-3.5 h-3.5 text-[#fbbf24]" />;
-      case "note":
-        return <MessageSquare className="w-3.5 h-3.5 text-[#38bdf8]" />;
-      default:
-        return null;
-    }
-  };
+  const currentSectionLabel = TAB_LABEL_MAP[activeTab] || "Overview";
+  const isDashboardRoot = activeTab === "overview";
 
   return (
-    <div className="space-y-4 border-b border-[#e3e8e5] bg-white px-6 py-5 md:px-8 md:py-6">
-      {/* Breadcrumb row: Dashboard > Page | Online + 🔔 */}
-      <div className="flex items-center justify-between gap-4">
-        <nav
-          aria-label="Breadcrumb"
-          className="flex items-center gap-1.5 text-[13px]"
-        >
-          <span className="text-[#7b8982] font-medium">Dashboard</span>
-          <ChevronRight className="w-3.5 h-3.5 text-[#aeb9b3]" />
-          <span className="text-[#12201b] font-semibold">{pageLabel}</span>
+    <header className="border-b border-[#EEF0F6] bg-white px-6 py-3.5 md:px-8 sticky top-0 z-20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 mx-auto">
+        {/* Left: Functional Breadcrumbs navigation */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[13.5px]">
+          <button
+            type="button"
+            onClick={() => onNavigateTab?.("overview")}
+            className={`font-semibold transition-colors cursor-pointer ${
+              isDashboardRoot
+                ? "text-[#5B5BF0] font-bold"
+                : "text-[#6B7280] hover:text-[#0F1535]"
+            }`}
+          >
+            Dashboard
+          </button>
+
+          {!isDashboardRoot && (
+            <>
+              <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+              {activeTab === "booking-detail" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab?.("bookings")}
+                    className="font-medium text-[#6B7280] hover:text-[#0F1535] transition-colors cursor-pointer"
+                  >
+                    Bookings
+                  </button>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                  <span className="font-bold text-[#0F1535]">{currentSectionLabel}</span>
+                </>
+              ) : activeTab === "customer-detail" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab?.("customers")}
+                    className="font-medium text-[#6B7280] hover:text-[#0F1535] transition-colors cursor-pointer"
+                  >
+                    Customers
+                  </button>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                  <span className="font-bold text-[#0F1535]">{currentSectionLabel}</span>
+                </>
+              ) : activeTab === "add-booking" ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab?.("bookings")}
+                    className="font-medium text-[#6B7280] hover:text-[#0F1535] transition-colors cursor-pointer"
+                  >
+                    Bookings
+                  </button>
+                  <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+                  <span className="font-bold text-[#0F1535]">New Booking</span>
+                </>
+              ) : (
+                <span className="font-bold text-[#0F1535]">{currentSectionLabel}</span>
+              )}
+            </>
+          )}
         </nav>
 
-        <div className="flex items-center gap-2.5">
-          {/* Online status pill */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#eaf6f0] border border-[#c8e7d8] text-[12px] font-medium text-[#176b50]"
-            title="Dashboard connected"
-          >
-            <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3fbf97] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3fbf97]" />
-            </span>
-            <span>Online</span>
-          </div>
+        {/* Center / Right controls */}
+        <div className="flex items-center gap-3 sm:gap-4 justify-between sm:justify-end flex-1 sm:flex-initial">
+          {/* Rounded pill search bar with live dropdown */}
+          <div className="flex-1 sm:w-72 md:w-80 relative" ref={searchRef}>
+            <div className="relative">
+              <Search
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={localQuery}
+                onFocus={() => setShowSearchDropdown(true)}
+                onChange={(e) => {
+                  setLocalQuery(e.target.value);
+                  setShowSearchDropdown(true);
+                  onSearchChange?.(e.target.value);
+                }}
+                placeholder="Search bookings, customers..."
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-[#F6F7FD] border border-transparent text-[13px] text-[#0F1535] outline-none focus:border-[#5B5BF0] focus:bg-white focus:ring-2 focus:ring-[#5B5BF0]/15 transition-all placeholder:text-[#9CA3AF] font-sans"
+                aria-label="Search bookings, customers"
+              />
+            </div>
 
-          {/* Notification bell */}
-          <div className="relative" ref={popoverRef}>
-            <button
-              type="button"
-              onClick={() => setShowNotifications(!showNotifications)}
-              aria-label={`View notifications (${unreadCount} unread)`}
-              aria-expanded={showNotifications}
-              className="relative p-2 rounded-[10px] bg-white border border-[#e3e8e5] text-[#66756d] hover:text-[#12201b] hover:bg-[#f6f8f7] transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0f6b54]"
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[#0f6b54] text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-[14px] bg-white border border-[#e3e8e5] shadow-xl z-50 overflow-hidden animate-in fade-in duration-150">
-                <div className="p-3.5 border-b border-[#e3e8e5] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[13.5px] font-bold text-[#12201b]">
-                      Notifications
-                    </span>
-                    {unreadCount > 0 && (
-                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[#e3f2ec] text-[#0f6b54]">
-                        {unreadCount} new
-                      </span>
-                    )}
+            {/* Live Search Results Dropdown */}
+            {showSearchDropdown && q.length > 0 && (
+              <div className="absolute left-0 right-0 mt-2 bg-white text-[#0F1535] border border-[#EEF0F6] rounded-[20px] shadow-[0_12px_36px_rgba(91,91,240,0.12)] z-50 overflow-hidden divide-y divide-[#EEF0F6] animate-in fade-in zoom-in-95 duration-150">
+                {!hasSearchResults ? (
+                  <div className="p-4 text-center text-[#6B7280] text-[13px]">
+                    No matching bookings, customers or services found for &ldquo;{localQuery}&rdquo;.
                   </div>
-                  {unreadCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={markAllAsRead}
-                      className="text-[11.5px] font-medium text-[#0f6b54] hover:underline"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-
-                <div className="divide-y divide-[#e9eeeb] max-h-80 overflow-y-auto">
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`p-3.5 text-[12.5px] space-y-2 transition-colors ${
-                        notif.read ? "opacity-60 hover:opacity-100" : "bg-[#f7faf8]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {getTypeIcon(notif.type)}
-                          <span className="font-semibold text-[#12201b] truncate">
-                            {notif.title}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-[#7b8982] font-mono shrink-0">
-                          {notif.time}
+                ) : (
+                  <>
+                    {/* Matched Bookings */}
+                    {matchedBookings.length > 0 && (
+                      <div className="p-3">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] px-2 block mb-1.5">
+                          Bookings
                         </span>
+                        <div className="space-y-1">
+                          {matchedBookings.map((b) => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => {
+                                onNavigateTab?.("bookings", b.id);
+                                setShowSearchDropdown(false);
+                                setLocalQuery("");
+                              }}
+                              className="w-full text-left p-2 rounded-xl hover:bg-[#F6F7FD] transition-colors flex items-center justify-between cursor-pointer group"
+                            >
+                              <div>
+                                <div className="font-bold text-[13.5px] text-[#5B5BF0]">
+                                  {b.id}
+                                </div>
+                                <div className="text-[12px] text-[#6B7280]">
+                                  {b.customerName || "Customer"} · {b.serviceName || "Service"}
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#E7F8F0] text-[#12B76A]">
+                                {b.status}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <p className="text-[#5d6b65] text-[12px] leading-relaxed">
-                        {notif.description}
-                      </p>
-                      <div className="flex justify-end pt-1">
-                        <button
-                          type="button"
-                          onClick={() => handleNotificationClick(notif)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[6px] bg-[#e3f2ec] hover:bg-[#d5ebdf] text-[#0f6b54] text-[11.5px] font-medium transition-colors cursor-pointer"
-                        >
-                          <span>View {notif.type}</span>
-                          <ExternalLink className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    )}
 
-                <div className="p-2.5 bg-[#f7faf8] border-t border-[#e3e8e5] text-center text-[11px] text-[#7b8982]">
-                  Real-time operational alerts from Thrikannapuram Hub
-                </div>
+                    {/* Matched Customers */}
+                    {matchedCustomers.length > 0 && (
+                      <div className="p-3">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] px-2 block mb-1.5">
+                          Customers
+                        </span>
+                        <div className="space-y-1">
+                          {matchedCustomers.map((c) => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                onNavigateTab?.("customers", c.id);
+                                setShowSearchDropdown(false);
+                                setLocalQuery("");
+                              }}
+                              className="w-full text-left p-2 rounded-xl hover:bg-[#F6F7FD] transition-colors flex items-center justify-between cursor-pointer group"
+                            >
+                              <div>
+                                <div className="font-bold text-[13.5px] text-[#0F1535]">
+                                  {c.name}
+                                </div>
+                                <div className="text-[12px] text-[#6B7280]">
+                                  {c.phone} · {c.district || c.address}
+                                </div>
+                              </div>
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EFF8FF] text-[#3B82F6]">
+                                {c.status}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Matched Services */}
+                    {matchedServices.length > 0 && (
+                      <div className="p-3">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] px-2 block mb-1.5">
+                          Services
+                        </span>
+                        <div className="space-y-1">
+                          {matchedServices.map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => {
+                                onNavigateTab?.("services", s.id);
+                                setShowSearchDropdown(false);
+                                setLocalQuery("");
+                              }}
+                              className="w-full text-left p-2 rounded-xl hover:bg-[#F6F7FD] transition-colors flex items-center justify-between cursor-pointer group"
+                            >
+                              <div className="font-bold text-[13.5px] text-[#0F1535]">
+                                {s.name}
+                              </div>
+                              <span className="text-[11px] font-semibold text-[#6B7280]">
+                                {s.category}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
+
+          {/* Right Group: Online Status Badge + Notification Bell (Profile removed as requested) */}
+          <div className="flex items-center gap-3">
+            {/* Functional Online Status Badge */}
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#ECFDF3] border border-[#A6F4C5] text-[#027A48] select-none"
+              title="System Online & Synchronized"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#12B76A] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#12B76A]" />
+              </span>
+              <span className="text-[12px] font-bold tracking-tight">Online</span>
+            </div>
+
+            {/* Notification Bell */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setShowNotifications(!showNotifications)}
+                aria-label="View notifications"
+                className="relative w-9 h-9 rounded-full bg-[#F6F7FD] text-[#0F1535] hover:bg-[#EEF0FF] hover:text-[#5B5BF0] flex items-center justify-center transition-colors cursor-pointer border border-[#EEF0F6]"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#EF4444] ring-2 ring-white"
+                    aria-hidden="true"
+                  />
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-[320px] sm:w-[360px] bg-white text-[#0F1535] border border-[#EEF0F6] rounded-[20px] shadow-[0_12px_36px_rgba(91,91,240,0.12)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-5 py-3.5 bg-[#F8F9FC] border-b border-[#EEF0F6] flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[14px] font-bold text-[#0F1535]">
+                        Notifications
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EEF0FF] text-[#5B5BF0]">
+                          {unreadCount} new
+                        </span>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => markAllNotificationsAsRead()}
+                        className="text-[12px] font-semibold text-[#5B5BF0] hover:underline cursor-pointer"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="divide-y divide-[#EEF0F6] max-h-80 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-6 text-center text-[#6B7280] text-[13px]">
+                        No notifications available.
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className={`p-4 text-[13px] space-y-2 transition-colors ${
+                            notif.read ? "opacity-60 hover:opacity-100" : "bg-[#F8F9FC]/80"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-[#0F1535] truncate">
+                              {notif.message}
+                            </span>
+                            <span className="text-[11px] text-[#9CA3AF] shrink-0 font-mono">
+                              {notif.createdAt}
+                            </span>
+                          </div>
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              onClick={() => handleNotificationClick(notif.id, notif.type)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#EEF0FF] hover:bg-[#E0E4FF] text-[#5B5BF0] text-[12px] font-bold transition-colors cursor-pointer"
+                            >
+                              <span>
+                                View {notif.type === "booking" ? "booking" : notif.type === "payment" ? "invoice" : "details"}
+                              </span>
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4">
-          <div className="bg-white border border-[#e3e8e5] rounded-[14px] p-5 shadow-sm">
-            <div className="text-[26px] font-extrabold tracking-tight uppercase text-[#0f6b54] mb-1">
-              {pageLabel}
-            </div>
-            <h1 className="text-[17px] font-semibold text-[#12201b] leading-tight">
-              Welcome, Admin 👋
-            </h1>
-            <p className="text-[15px] text-[#5d6b65] mt-1.5 leading-relaxed">
-              Here&apos;s what&apos;s happening at Plan C today.
-              {pendingCount > 0 ? (
-                <>
-                  {" "}You have{" "}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onNavigateTab
-                        ? onNavigateTab("bookings", "Pending")
-                        : onNavigateToBookings?.("Pending")
-                    }
-                    className="text-[#0f6b54] font-semibold hover:underline focus:outline-none focus-visible:underline"
-                  >
-                    {pendingCount} booking
-                    {pendingCount !== 1 ? "s" : ""} pending dispatch
-                  </button>
-                  .
-                </>
-              ) : (
-                " No bookings are pending dispatch right now."
-              )}
-            </p>
-            <blockquote className="mt-4 border-l-2 border-[#0f6b54] pl-3 text-[14px] italic leading-relaxed text-[#66756d]">
-              “A cleaner space creates room for a clearer mind.”
-            </blockquote>
-          </div>
-
-          <div className="bg-white border border-[#e3e8e5] rounded-[14px] p-5 flex flex-col justify-center min-w-[200px] shadow-sm">
-            <div className="text-[17px] font-semibold text-[#12201b] leading-tight">
-              {todayLabel}
-            </div>
-            <div className="text-[15px] text-[#5d6b65] mt-1">
-              Thrikannapuram, Trivandrum
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </header>
   );
 }

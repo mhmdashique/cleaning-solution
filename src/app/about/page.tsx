@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { getAllBookings, getSiteSettings } from "@/lib/data/store";
 import { 
   ShieldCheck, 
   Target, 
@@ -22,7 +23,17 @@ export const metadata: Metadata = {
     "Learn about PLAN C Cleaning Solutions in Thrikannapuram, Thiruvananthapuram. 5+ years of trusted cleaning and pest control services across Kerala. Mission, values, and expert team.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  // Figures shown on this page are derived from live records.
+  const [bookings, settings] = await Promise.all([
+    getAllBookings().catch(() => []),
+    getSiteSettings().catch(() => null),
+  ]);
+
+  const completedJobs = bookings.filter(
+    (booking) => booking.status === "Completed"
+  ).length;
+
   const values = [
     {
       icon: Zap,
@@ -109,17 +120,22 @@ export default function AboutPage() {
               Kerala&apos;s climate presents specific challenges: high atmospheric humidity causing mildew, hard water depositing yellow calcium rings on tiles, and red soil mud adhering to exterior interlocks. Ordinary domestic sweeping cannot solve these deeply rooted problems.
             </p>
             <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
-              By investing in German rotary scrubbers, 140°C thermal steam sanitizers, UV water tank irradiators, and odorless Bayer pest management, we have helped over <strong>2,500+ happy households and office spaces</strong> experience true hygiene.
+              By investing in German rotary scrubbers, 140°C thermal steam sanitizers, UV water tank irradiators, and odorless Bayer pest management, we have completed{" "}
+              <strong>
+                {completedJobs.toLocaleString("en-IN")} cleaning{" "}
+                {completedJobs === 1 ? "engagement" : "engagements"}
+              </strong>{" "}
+              for households and office spaces across the region.
             </p>
 
             <div className="pt-2 flex items-center gap-6 text-sm font-bold text-slate-900">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-brand-600" />
-                <span>5+ Years Experience</span>
+                <span>{settings?.experience_years || "—"} Years Experience</span>
               </div>
               <div className="flex items-center gap-2">
                 <HeartHandshake className="w-5 h-5 text-brand-600" />
-                <span>100% Satisfaction</span>
+                <span>100% Satisfaction Guarantee</span>
               </div>
             </div>
           </div>
@@ -192,7 +208,7 @@ export default function AboutPage() {
               Experience the PLAN C Difference
             </h3>
             <p className="max-w-xl text-sm text-slate-600">
-              Join thousands of happy homeowners and business owners across Kerala. Book your service or request a free site estimate today.
+              Join homeowners and business owners across Kerala. Book your service or request a free site estimate today.
             </p>
           </div>
 

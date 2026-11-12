@@ -9,7 +9,9 @@ export interface Service {
   long_desc: string;
   image_url: string;
   icon?: string;
+  duration?: string;
   is_featured: boolean;
+  is_active?: boolean;
   sort_order: number;
   meta_title?: string;
   meta_description?: string;

@@ -1,4 +1,8 @@
-export function LocalBusinessJsonLd() {
+export function LocalBusinessJsonLd({
+  aggregateRating,
+}: {
+  aggregateRating?: { ratingValue: string; reviewCount: number };
+}) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "HomeAndConstructionBusiness",
@@ -53,11 +57,16 @@ export function LocalBusinessJsonLd() {
       "Varkala",
       "Kerala"
     ],
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "148"
-    }
+    // Only emitted when real, approved reviews exist — never a hardcoded score.
+    ...(aggregateRating && aggregateRating.reviewCount > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: aggregateRating.ratingValue,
+            reviewCount: String(aggregateRating.reviewCount),
+          },
+        }
+      : {}),
   };
 
   return (

@@ -4,11 +4,24 @@ import { getApprovedReviews, getServices } from "@/lib/data/store";
 import ReviewsClient from "@/components/reviews/ReviewsClient";
 import { ChevronRight } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Customer Reviews & Ratings | PLAN C Cleaning Solutions",
-  description:
-    "Read genuine reviews from homeowners and businesses across Thiruvananthapuram, Kowdiar, Pattom, and Kazhakkoottam. 4.9/5 rating for deep cleaning, water tank and pest control.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const reviews = await getApprovedReviews().catch(() => []);
+  const average =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviews.length
+        ).toFixed(1)
+      : null;
+
+  return {
+    title: "Customer Reviews & Ratings | PLAN C Cleaning Solutions",
+    description:
+      average && reviews.length > 0
+        ? `Read genuine reviews from homeowners and businesses across Thiruvananthapuram, Kowdiar, Pattom, and Kazhakkoottam. ${average}/5 rating across ${reviews.length} verified reviews.`
+        : "Read genuine reviews from homeowners and businesses across Thiruvananthapuram, Kowdiar, Pattom, and Kazhakkoottam.",
+  };
+}
 
 export const revalidate = 60;
 

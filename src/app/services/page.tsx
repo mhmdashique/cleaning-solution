@@ -4,18 +4,25 @@ import ServicesDirectory from "@/components/services/ServicesDirectory";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Professional Cleaning & Pest Control Services in Kerala",
-  description:
-    "Explore our complete directory of 24+ cleaning and pest control services in Thiruvananthapuram. Full house deep cleaning, water tank sanitisation, sofa shampooing, termite eradication & more.",
-  keywords: [
-    "cleaning services Trivandrum",
-    "pest control services Kerala",
-    "deep cleaning services list",
-    "water tank cleaning Thiruvananthapuram",
-    "anti termite treatment Kerala",
-  ],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const services = await getServices().catch(() => []);
+  const count = services.length;
+
+  return {
+    title: "Professional Cleaning & Pest Control Services in Kerala",
+    description:
+      count > 0
+        ? `Explore our directory of ${count} cleaning and pest control services in Thiruvananthapuram. Full house deep cleaning, water tank sanitisation, sofa shampooing, termite eradication & more.`
+        : "Explore our cleaning and pest control services in Thiruvananthapuram. Full house deep cleaning, water tank sanitisation, sofa shampooing, termite eradication & more.",
+    keywords: [
+      "cleaning services Trivandrum",
+      "pest control services Kerala",
+      "deep cleaning services list",
+      "water tank cleaning Thiruvananthapuram",
+      "anti termite treatment Kerala",
+    ],
+  };
+}
 
 export const revalidate = 60;
 

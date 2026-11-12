@@ -20,16 +20,22 @@ interface HourSlot {
 
 interface PeakHoursChartProps {
   data: HourSlot[];
+  title?: string;
+  subtitle?: string;
 }
 
-export default function PeakHoursChart({ data }: PeakHoursChartProps) {
-  const maxVal = Math.max(...data.map((d) => d.bookings));
+export default function PeakHoursChart({
+  data,
+  title = "Peak booking hours",
+  subtitle = "Preferred appointment slots across Trivandrum",
+}: PeakHoursChartProps) {
+  const maxVal = Math.max(0, ...data.map((d) => d.bookings));
 
   return (
     <ChartCard
-      title="Peak booking hours"
-      subtitle="Preferred appointment slots across Trivandrum"
-      ariaLabel="Bar chart of peak booking hours"
+      title={title}
+      subtitle={subtitle}
+      ariaLabel={`Bar chart of ${title.toLowerCase()}`}
     >
       <div className="w-full h-[220px]">
         <ResponsiveContainer width="100%" height="100%">

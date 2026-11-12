@@ -30,9 +30,10 @@ import { formatCurrency } from "@/lib/formatCurrency";
 export default function TrackClient() {
   const searchParams = useSearchParams();
   const initialCode = searchParams.get("code") || "";
+  const initialPhone = searchParams.get("phone") || "";
 
   const [bookingCode, setBookingCode] = useState(initialCode);
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(initialPhone);
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
@@ -42,12 +43,24 @@ export default function TrackClient() {
 
   const [isPending, startTransition] = useTransition();
 
-  // If initial code is set, pre-fill sample phone for easy testing if it matches sample
+  // When opened from the admin booking page, load the customer's details automatically.
   useEffect(() => {
-    if (initialCode === "PC-2025-0001" && !phone) {
-      setPhone("9847123456");
-    }
-  }, [initialCode, phone]);
+    if (!initialCode || !initialPhone) return;
+    let cancelled = false;
+    startTransition(async () => {
+      const res = await trackBookingAction(initialCode, initialPhone);
+      if (cancelled) return;
+      if (res.success && res.booking) {
+        setBooking(res.booking);
+      } else {
+        setError(res.error || "Booking not found.");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialCode, initialPhone]);
 
   const handleTrack = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,25 +124,9 @@ export default function TrackClient() {
             Track Your Service in Real-Time
           </h2>
           <p className="text-xs sm:text-sm text-slate-600">
-            Enter your Booking ID (e.g. PC-2025-0001) and the registered phone number.
+            Enter your Booking ID (e.g. PC-2026-1234) and the registered phone
+            number.
           </p>
-        </div>
-
-        {/* Demo Quick Fill Hint */}
-        <div className="p-3 bg-brand-50/60 rounded-2xl border border-brand-100 text-xs text-brand-900 flex flex-wrap items-center justify-between gap-2">
-          <span>
-            💡 Testing? Try demo code: <strong>PC-2025-0001</strong> with Phone: <strong>9847123456</strong>
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              setBookingCode("PC-2025-0001");
-              setPhone("9847123456");
-            }}
-            className="text-xs font-bold text-brand-700 hover:underline"
-          >
-            Auto-fill demo
-          </button>
         </div>
 
         {error && (
@@ -149,7 +146,7 @@ export default function TrackClient() {
               required
               value={bookingCode}
               onChange={(e) => setBookingCode(e.target.value)}
-              placeholder="e.g. PC-2025-0001"
+              placeholder="e.g. PC-2026-1234"
               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm uppercase font-mono font-bold focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600"
             />
           </div>
@@ -163,7 +160,7 @@ export default function TrackClient() {
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="e.g. 9847123456"
+              placeholder="e.g. 9876543210"
               className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600"
             />
           </div>

@@ -57,7 +57,7 @@ export interface AdminArticle {
   title: string;
   excerpt: string;
   content?: string;
-  category: "Home cleaning" | "Pest prevention" | "Water hygiene" | "Seasonal care";
+  category: string;
   author: string;
   date: string;
   status: "Published" | "Draft";

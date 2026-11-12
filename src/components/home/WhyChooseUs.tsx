@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import {
+  getServices,
+  getAllBookings,
+  getSiteSettings,
+} from "@/lib/data/store";
 
 const pillars = [
   {
@@ -45,14 +50,28 @@ const pillars = [
   },
 ];
 
-const stats = [
-  { value: "5+", label: "Years of excellence" },
-  { value: "2500+", label: "Happy clients" },
-  { value: "35+", label: "Services offered" },
-  { value: "100%", label: "Satisfaction rate" },
-];
+export default async function WhyChooseUs() {
+  // Every figure below is derived from live records — nothing is hardcoded.
+  const [services, bookings, settings] = await Promise.all([
+    getServices().catch(() => []),
+    getAllBookings().catch(() => []),
+    getSiteSettings().catch(() => null),
+  ]);
 
-export default function WhyChooseUs() {
+  const happyClients = new Set(
+    bookings
+      .filter((booking) => booking.status === "Completed")
+      .map((booking) => booking.phone.replace(/\D/g, ""))
+      .filter(Boolean)
+  ).size;
+
+  const stats = [
+    { value: settings?.experience_years || "—", label: "Years of excellence" },
+    { value: String(happyClients), label: "Happy clients" },
+    { value: String(services.length), label: "Services offered" },
+    { value: "100%", label: "Satisfaction guarantee" },
+  ];
+
   return (
     <section
       id="why-us"

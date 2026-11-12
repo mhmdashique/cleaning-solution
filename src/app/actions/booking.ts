@@ -45,6 +45,8 @@ export async function submitBookingAction(formData: FormData) {
     });
 
     revalidatePath("/track");
+    revalidatePath("/admin");
+    revalidatePath("/admin", "layout");
     revalidatePath("/admin/bookings");
 
     return {
@@ -57,6 +59,16 @@ export async function submitBookingAction(formData: FormData) {
       success: false,
       error: "Unable to process booking at this moment. Please call our direct helpline at 7994342372.",
     };
+  }
+}
+
+export async function fetchWebsiteBookingsAction() {
+  const { getAllBookings } = await import("@/lib/data/store");
+  try {
+    return await getAllBookings();
+  } catch (error) {
+    console.error("Failed to fetch website bookings:", error);
+    return [];
   }
 }
 

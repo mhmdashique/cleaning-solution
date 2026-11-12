@@ -1,33 +1,31 @@
 import { NextResponse } from "next/server";
-import { 
-  getAllBookings, 
-  getServices, 
-  getAllReviews, 
-  getAllBlogPosts 
+import {
+  getAllBookings,
+  getServices,
+  getAllReviews,
+  getAllBlogPosts,
+  getClientNoteStates,
 } from "@/lib/data/store";
-import { 
-  initialBookings, 
-  opsOverviewMetrics, 
-  opsPipelineFulfillment 
-} from "@/lib/data/adminMockData";
 import { formatCurrency } from "@/lib/formatCurrency";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [bookings, services, reviews, blogPosts] = await Promise.all([
-      getAllBookings().catch(() => []),
-      getServices().catch(() => []),
-      getAllReviews().catch(() => []),
-      getAllBlogPosts().catch(() => []),
-    ]);
+    const [bookings, services, reviews, blogPosts, clientNoteStates] =
+      await Promise.all([
+        getAllBookings().catch(() => []),
+        getServices().catch(() => []),
+        getAllReviews().catch(() => []),
+        getAllBlogPosts().catch(() => []),
+        getClientNoteStates().catch(() => ({})),
+      ]);
 
-    const totalBookings = bookings.length || initialBookings.length;
-    const pending = bookings.filter((b) => b.status === "Pending").length || 1;
-    const inProgress = bookings.filter((b) => b.status === "In progress").length || 1;
-    const completed = bookings.filter((b) => b.status === "Completed").length || 1;
-    const confirmed = bookings.filter((b) => b.status === "Confirmed").length || 1;
+    const totalBookings = bookings.length;
+    const pending = bookings.filter((b) => b.status === "Pending").length;
+    const inProgress = bookings.filter((b) => b.status === "In progress").length;
+    const completed = bookings.filter((b) => b.status === "Completed").length;
+    const confirmed = bookings.filter((b) => b.status === "Confirmed").length;
     const billedBookings = bookings.filter(
       (booking) => booking.status === "Completed" && booking.amount != null
     );
@@ -36,14 +34,19 @@ export async function GET() {
       0
     );
 
-    const percentage = totalBookings > 0 ? Math.round((completed / totalBookings) * 100) : 25;
+    const unhandledNotes = Object.values(clientNoteStates).filter(
+      (handled) => !handled
+    ).length;
+
+    const percentage =
+      totalBookings > 0 ? Math.round((completed / totalBookings) * 100) : 0;
 
     return NextResponse.json({
       metrics: {
         totalBookings: {
           value: totalBookings,
-          sublabel: "+2 vs last week",
-          badge: "+2 vs last week",
+          sublabel: "Bookings received to date",
+          badge: "All time",
         },
         pendingDispatch: {
           value: pending,
@@ -75,10 +78,10 @@ export async function GET() {
       },
       navCounts: {
         bookings: totalBookings,
-        services: services.length || 8,
-        reviews: reviews.length || 5,
-        blog: blogPosts.length || 4,
-        unhandledNotes: 2,
+        services: services.length,
+        reviews: reviews.length,
+        blog: blogPosts.length,
+        unhandledNotes,
       },
       statusChips: {
         awaitingDispatch: pending,
@@ -86,18 +89,32 @@ export async function GET() {
       },
     });
   } catch {
+    // No data available — report empty counts rather than placeholder figures.
     return NextResponse.json({
-      metrics: opsOverviewMetrics,
-      pipeline: opsPipelineFulfillment,
+      metrics: {
+        totalBookings: {
+          value: 0,
+          sublabel: "Bookings received to date",
+          badge: "All time",
+        },
+        pendingDispatch: { value: 0, sublabel: "Awaiting customer confirmation" },
+        inProgress: { value: 0, sublabel: "Technicians on site" },
+        billedRevenue: { value: "—", sublabel: "No booking amounts entered" },
+      },
+      pipeline: {
+        percentage: 0,
+        summary: "0 of 0 orders fulfilled",
+        counts: { completed: 0, inProgress: 0, confirmed: 0, pending: 0 },
+      },
       navCounts: {
-        bookings: initialBookings.length,
-        services: 8,
-        reviews: 5,
-        blog: 4,
-        unhandledNotes: 2,
+        bookings: 0,
+        services: 0,
+        reviews: 0,
+        blog: 0,
+        unhandledNotes: 0,
       },
       statusChips: {
-        awaitingDispatch: 1,
+        awaitingDispatch: 0,
         operatingHours: "Dispatch 7:00 AM – 9:00 PM",
       },
     });

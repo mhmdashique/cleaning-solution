@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS services (
     long_desc TEXT NOT NULL,
     image_url TEXT NOT NULL,
     icon TEXT,
+    duration TEXT DEFAULT '2–3 hours',
     is_featured BOOLEAN DEFAULT false,
+    is_active BOOLEAN NOT NULL DEFAULT true,
     sort_order INTEGER DEFAULT 0,
     meta_title TEXT,
     meta_description TEXT,
@@ -25,6 +27,12 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 -- Index for service lookups
+ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS duration TEXT DEFAULT '2–3 hours';
+
+ALTER TABLE services
+    ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true;
+
 CREATE INDEX IF NOT EXISTS idx_services_slug ON services(slug);
 CREATE INDEX IF NOT EXISTS idx_services_category ON services(category);
 CREATE INDEX IF NOT EXISTS idx_services_featured ON services(is_featured);
@@ -98,6 +106,16 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 CREATE INDEX IF NOT EXISTS idx_blog_slug ON blog_posts(slug);
 CREATE INDEX IF NOT EXISTS idx_blog_published ON blog_posts(published, published_at DESC);
 
+-- 4b. CLIENT NOTES TABLE (handled state for customer booking messages)
+CREATE TABLE IF NOT EXISTS client_notes (
+    booking_code TEXT PRIMARY KEY,
+    handled BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_client_notes_handled ON client_notes(handled);
+
 -- 5. FAQS TABLE
 CREATE TABLE IF NOT EXISTS faqs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -121,6 +139,7 @@ ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
@@ -151,8 +170,18 @@ CREATE POLICY "Public faqs read" ON faqs
     FOR SELECT USING (true);
 
 -- Site Settings: Everyone can read settings
-CREATE POLICY "Public site_settings read" ON site_settings
-    FOR SELECT USING (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE schemaname = 'public'
+          AND tablename = 'site_settings'
+          AND policyname = 'Public site_settings read'
+    ) THEN
+        CREATE POLICY "Public site_settings read" ON site_settings
+            FOR SELECT USING (true);
+    END IF;
+END $$;
 
 -- Service Role (Server-side admin operations) automatically bypasses RLS
 -- when using the SUPABASE_SERVICE_ROLE_KEY.

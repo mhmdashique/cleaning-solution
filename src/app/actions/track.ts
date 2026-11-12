@@ -2,6 +2,7 @@
 
 import { getBookingByCodeAndPhone, updateBookingStatus } from "@/lib/data/store";
 import { BookingStatus } from "@/types";
+import { revalidatePath } from "next/cache";
 
 export async function trackBookingAction(code: string, phone: string) {
   try {
@@ -38,6 +39,8 @@ export async function requestRescheduleAction(
       "Pending" as BookingStatus,
       `Reschedule requested to ${newDate}. Note: ${reason}`
     );
+    revalidatePath("/track");
+    revalidatePath("/admin");
     return {
       success: true,
       message: "Reschedule request received. Our coordinator will call you to confirm the new slot.",
@@ -54,6 +57,8 @@ export async function cancelBookingAction(bookingCode: string, reason: string) {
       "Cancelled" as BookingStatus,
       `Customer cancelled: ${reason}`
     );
+    revalidatePath("/track");
+    revalidatePath("/admin");
     return {
       success: true,
       message: "Your booking cancellation request has been processed.",

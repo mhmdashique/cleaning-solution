@@ -3,99 +3,55 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarDays } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden bg-white pt-10 md:pt-14 pb-20 md:pb-24">
-        {/* One faint green tint behind the headline only */}
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[880px] max-w-screen -translate-x-1/2 rounded-full bg-brand-50/60 blur-3xl" />
+    <section className="relative isolate flex min-h-[780px] items-center justify-center overflow-hidden bg-slate-100 pt-24 pb-28 sm:min-h-[860px] sm:pt-28 lg:min-h-[min(960px,110svh)]">
+      <Image
+        src="/images/landingpage.jpg"
+        alt="Professional cleaner caring for a bright, comfortable home"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-[62%_center]"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-gradient-to-r from-white/50 via-white/35 to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.54)_0%,rgba(255,255,255,0.22)_42%,transparent_76%)]"
+      />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 xl:gap-14">
-            {/* ─────────────────────────────────────────────
-                LEFT — copy
-            ────────────────────────────────────────────── */}
-            <div className="space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-600 shadow-2xs"
-              >
-                <ShieldCheck className="h-3.5 w-3.5 text-brand-600" strokeWidth={2} />
-                <span>Trusted · Professional · Reliable</span>
-              </motion.div>
-
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.08 }}
-                className="text-[38px] font-bold leading-[1.1] tracking-tight text-slate-900 text-balance sm:text-5xl lg:text-[56px]"
-              >
-                Professional Cleaning &amp; Pest Defense{" "}
-                <span className="whitespace-nowrap text-brand-700">in Kerala.</span>
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.16 }}
-                className="text-lg italic text-slate-500"
-              >
-                You leave it, we clean it.
-              </motion.p>
-
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className="max-w-[520px] text-[15px] leading-7 text-slate-600"
-              >
-                PLAN C Cleaning Solutions is a specialized cleaning and pest
-                control company based in Thiruvananthapuram. We provide
-                customized, mechanized solutions with safe and effective
-                treatments.
-              </motion.p>
-
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.26 }}
-                className="flex flex-wrap items-center gap-3 pt-2"
-              >
-                <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-7 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-brand-800 active:scale-[0.98]"
-                >
-                  <span>Book Service Online</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </motion.div>
-            </div>
-
-            {/* ─────────────────────────────────────────────
-                RIGHT — photo
-            ────────────────────────────────────────────── */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
-              className="relative"
-            >
-              <div className="relative aspect-[1056/840] w-full overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 shadow-soft-lg">
-                <Image
-                  src="/images/hero-cleaner-new.jpg"
-                  alt="Professional cleaner in safety gear wiping a window with a green cloth and spray bottle"
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover object-center"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </div>
+      <div className="relative z-10 mx-auto w-full max-w-5xl px-4 text-center sm:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55 }}
+          className="mx-auto max-w-4xl"
+        >
+          <h1 className="mx-auto max-w-3xl text-balance text-[40px] font-extrabold leading-[1.04] tracking-[-0.045em] text-slate-950 sm:text-6xl lg:text-[68px]">
+            <span className="block">Professional</span>
+            <span className="block">Cleaning &amp; Pest</span>
+            <span className="block">
+              Defense <span className="text-brand-700">in Kerala.</span>
+            </span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-7 text-slate-700 sm:mt-6 sm:text-xl">
+            Your space, our care — spotless, safe and pest-free!
+          </p>
+          <Link
+            href="/contact"
+            className="mt-7 inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-brand-600 to-brand-700 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-brand-900/20 transition hover:-translate-y-0.5 hover:from-brand-700 hover:to-brand-800 sm:mt-8 sm:px-8 sm:py-4 sm:text-base"
+          >
+            <CalendarDays className="h-5 w-5" aria-hidden="true" />
+            <span>Book Service Online</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </motion.div>
+      </div>
     </section>
   );
 }

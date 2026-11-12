@@ -11,6 +11,14 @@ export default function HomeTestimonials({ reviews }: { reviews: Review[] }) {
   const perPage = 4;
   const pages = Math.max(1, Math.ceil(items.length / perPage));
 
+  // Rating summary is computed from the real approved reviews only.
+  const averageRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+        ).toFixed(1)
+      : null;
+
   const [page, setPage] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -50,11 +58,29 @@ export default function HomeTestimonials({ reviews }: { reviews: Review[] }) {
         </div>
 
         {/* Auto-scrolling carousel — 4 reviews per page, advances every 4s */}
-        <div
-          className="overflow-hidden"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
+        {items.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-14 text-center">
+            <p className="text-sm font-semibold text-slate-900">
+              No published reviews yet
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+              Verified client feedback appears here once it is approved by our
+              operations team.
+            </p>
+            <Link
+              href="/reviews#write-review"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-brand-700 px-5 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-brand-800"
+            >
+              Submit Feedback
+            </Link>
+          </div>
+        ) : (
+          <>
+          <div
+            className="overflow-hidden"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+          >
           <div
             className="flex transition-transform duration-700 ease-in-out"
             style={{ transform: `translateX(-${page * 100}%)` }}
@@ -132,16 +158,20 @@ export default function HomeTestimonials({ reviews }: { reviews: Review[] }) {
             ))}
           </div>
         )}
+          </>
+        )}
 
         {/* Rating summary — quiet panel */}
         <div className="mt-10 flex flex-col items-center justify-between gap-5 rounded-3xl border border-brand-100 bg-brand-50 px-7 py-6 sm:flex-row">
           <div className="flex items-center gap-4 text-center sm:text-left">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-700 text-lg font-bold text-white">
-              4.9
+              {averageRating ?? "—"}
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900">
-                Consistently Rated 4.9/5 in Thiruvananthapuram
+                {averageRating
+                  ? `Rated ${averageRating}/5 by verified clients`
+                  : "No published ratings yet"}
               </p>
               <p className="mt-0.5 text-xs text-slate-500">
                 Independent client evaluations across cleaning and integrated pest control services.

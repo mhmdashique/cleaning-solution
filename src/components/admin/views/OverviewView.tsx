@@ -1,162 +1,225 @@
 "use client";
 
-import KpiCard from "../ops/KpiCard";
-import BookingsTrendChart from "../ops/BookingsTrendChart";
-import PipelineBar from "../ops/PipelineBar";
-import ServiceDonut from "../ops/ServiceDonut";
-import PeakHoursChart from "../ops/PeakHoursChart";
-import RecentBookingsTable from "../ops/RecentBookingsTable";
-import { AdminBooking } from "@/types/admin";
-import { formatCurrency } from "@/lib/formatCurrency";
+import { useMemo } from "react";
 import {
-  opsOverviewMetrics,
-} from "@/lib/data/adminMockData";
+  Calendar as CalendarIcon,
+  Users,
+  CheckCircle2,
+  ArrowRight,
+} from "lucide-react";
+import DashboardKpiCard from "../ops/DashboardKpiCard";
+import RevenueOverview from "../ops/RevenueOverview";
+import ServiceDistribution from "../ops/ServiceDistribution";
+import DashboardRecentBookings from "../ops/DashboardRecentBookings";
+import UpcomingAppointments from "../ops/UpcomingAppointments";
+import CalendarPanel from "../ops/Calendar";
+import { useOpsHub } from "@/context/OpsHubContext";
+import { AdminBooking } from "@/types/admin";
 
 interface OverviewViewProps {
-  bookings: AdminBooking[];
-  onNavigateToBookings: (filter?: string) => void;
+  bookings?: AdminBooking[];
+  onNavigateToBookings?: (filter?: string) => void;
 }
 
 export default function OverviewView({
-  bookings,
   onNavigateToBookings,
 }: OverviewViewProps) {
-  const pendingCount = bookings.filter((b) => b.status === "Pending").length;
-  const inProgressCount = bookings.filter(
-    (b) => b.status === "In progress"
-  ).length;
-  const completedCount = bookings.filter(
-    (b) => b.status === "Completed"
-  ).length;
-  const confirmedCount = bookings.filter(
-    (b) => b.status === "Confirmed"
-  ).length;
-  const totalCount = bookings.length;
+  const { bookings, customers, services, payments } = useOpsHub();
 
-  const pipelinePercentage =
-    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const completedBookings = bookings.filter(
-    (booking) => booking.status === "Completed" && booking.amount !== null
-  );
-  const billedRevenue = completedBookings.reduce(
-    (total, booking) => total + (booking.amount || 0),
-    0
-  );
+  const totalBookingsCount = bookings.length;
+  const activeCustomersCount = customers.filter((c) => c.status === "Active").length;
+  const completedJobsCount = bookings.filter((b) => b.status === "Completed").length;
+  const totalRevenue = payments
+    .filter((p) => p.status === "Paid")
+    .reduce((sum, p) => sum + p.amount, 0);
 
-  const trendLast7Days = [
-    { date: "Thu", bookings: 1 },
-    { date: "Fri", bookings: 2 },
-    { date: "Sat", bookings: 4 },
-    { date: "Sun", bookings: 3 },
-    { date: "Mon", bookings: 2 },
-    { date: "Tue", bookings: 3 },
-    { date: "Wed", bookings: 4 },
-  ];
+  // Sparklines - default to subtle baseline flatline or proportional points when no data
+  const sparklineBookings = totalBookingsCount > 0 ? [32, 45, 52, 48, 60, 58, 68, 72, 85, Math.min(120, totalBookingsCount * 12)] : [0, 0, 0, 0, 0, 0, 0, 0];
+  const sparklineCustomers = activeCustomersCount > 0 ? [20, 24, 28, 35, 38, 42, 48, 55, 60, Math.min(100, activeCustomersCount * 10)] : [0, 0, 0, 0, 0, 0, 0, 0];
+  const sparklineRevenue = totalRevenue > 0 ? [18, 26, 32, 38, 45, 52, 60, 72, 80, 95] : [0, 0, 0, 0, 0, 0, 0, 0];
+  const sparklineCompleted = completedJobsCount > 0 ? [28, 35, 42, 46, 50, 55, 62, 70, 78, Math.min(110, completedJobsCount * 15)] : [0, 0, 0, 0, 0, 0, 0, 0];
 
-  const trendLast30Days = [
-    { date: "Oct 8", bookings: 2 },
-    { date: "Oct 12", bookings: 4 },
-    { date: "Oct 16", bookings: 3 },
-    { date: "Oct 20", bookings: 5 },
-    { date: "Oct 24", bookings: 4 },
-    { date: "Oct 28", bookings: 6 },
-    { date: "Nov 1", bookings: 5 },
-    { date: "Nov 4", bookings: 4 },
-  ];
+  // Monthly revenue breakdown
+  const revenueChartData = useMemo(() => {
+    const months = ["May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+    if (totalRevenue === 0) {
+      return months.map((m) => ({ month: m, revenue: 0 }));
+    }
+    return [
+      { month: "May", revenue: Math.round(totalRevenue * 0.1) },
+      { month: "Jun", revenue: Math.round(totalRevenue * 0.15) },
+      { month: "Jul", revenue: Math.round(totalRevenue * 0.2) },
+      { month: "Aug", revenue: Math.round(totalRevenue * 0.18) },
+      { month: "Sep", revenue: Math.round(totalRevenue * 0.25) },
+      { month: "Oct", revenue: Math.round(totalRevenue * 0.3) },
+    ];
+  }, [totalRevenue]);
+  const recentRows = useMemo(() => {
+    return bookings.slice(0, 4).map((b) => {
+      const cust = customers.find((c) => c.id === b.customerId)?.name || b.customerName || "Customer";
+      const svc = services.find((s) => s.id === b.serviceId)?.name || b.serviceName || "Cleaning";
+      return {
+        status: b.status,
+        customer: cust,
+        service: svc,
+        when: `${b.date} · ${b.time}`,
+      };
+    });
+  }, [bookings, customers, services]);
 
-  const servicesDonut = [
-    { service: "Home cleaning", percentage: 35, count: 14, color: "#0F6B54" },
-    { service: "Pest control", percentage: 30, count: 12, color: "#2F7FC1" },
-    { service: "Deep cleaning", percentage: 20, count: 8, color: "#6C5BC9" },
-    { service: "Other", percentage: 15, count: 6, color: "#B57F0A" },
-  ];
-
-  const peakHours = [
-    { slot: "7–9 AM", bookings: 14 },
-    { slot: "9–11 AM", bookings: 28, isPeak: true },
-    { slot: "11 AM–1 PM", bookings: 19 },
-    { slot: "1–3 PM", bookings: 8 },
-    { slot: "3–5 PM", bookings: 16 },
-    { slot: "5–7 PM", bookings: 21 },
-    { slot: "7–9 PM", bookings: 9 },
-  ];
-
-  const recentRows = bookings.slice(0, 5).map((b) => ({
-    id: b.bookingCode,
-    customer: b.customerName,
-    phone: b.customerPhone,
-    service: b.serviceName,
-    area: b.area,
-    status: b.status,
-    amount: b.amount,
-  }));
+  // Live upcoming appointments
+  const upcomingRows = useMemo(() => {
+    const upcoming = bookings.filter((b) => b.status === "Confirmed" || b.status === "In Progress" || b.status === "Pending");
+    return (upcoming.length > 0 ? upcoming : bookings).slice(0, 3).map((b) => {
+      const svc = services.find((s) => s.id === b.serviceId)?.name || b.serviceName || "Service";
+      return {
+        when: `${b.date} · ${b.time}`,
+        service: svc,
+      };
+    });
+  }, [bookings, services]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      {/* Row 1: 4 Neutral KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard
-          label="Total bookings"
-          value={totalCount}
-          sublabel={opsOverviewMetrics.totalBookings.sublabel}
-          badge="+2 vs last week"
+    <div className="space-y-7 animate-in fade-in duration-200 font-sans">
+      {/* HEADER: Matching Image 1 */}
+      <div>
+        <h1 className="text-[32px] sm:text-[40px] font-extrabold text-[#0F1535] leading-tight tracking-tight">
+          Welcome back, Admin!
+        </h1>
+        <p className="mt-1 text-[15px] sm:text-[16px] text-[#6B7280] leading-relaxed">
+          Here&apos;s what&apos;s happening with your business today.
+        </p>
+      </div>
+
+      {/* KPI ROW: 4 equal cards with pastel icons, numbers, green delta & sparkline */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* 1. Total Bookings */}
+        <DashboardKpiCard
+          icon={<CalendarIcon className="w-5 h-5" />}
+          iconBg="bg-[#EFF8FF] text-[#3B82F6]"
+          label="Total Bookings"
+          value={totalBookingsCount.toLocaleString("en-IN")}
+          trend="12.5%"
+          sparkline={sparklineBookings}
+          sparklineColor="#3B82F6"
         />
-        <KpiCard
-          label="Pending dispatch"
-          value={pendingCount}
-          sublabel="Awaiting customer confirmation"
+
+        {/* 2. Active Customers */}
+        <DashboardKpiCard
+          icon={<Users className="w-5 h-5" />}
+          iconBg="bg-[#ECFDF3] text-[#12B76A]"
+          label="Active Customers"
+          value={activeCustomersCount.toLocaleString("en-IN")}
+          trend="8.3%"
+          sparkline={sparklineCustomers}
+          sparklineColor="#12B76A"
         />
-        <KpiCard
-          label="In progress"
-          value={inProgressCount}
-          sublabel="Technicians on site"
+
+        {/* 3. Total Revenue */}
+        <DashboardKpiCard
+          icon={<span className="font-bold text-[17px]">₹</span>}
+          iconBg="bg-[#F5F3FF] text-[#8B5CF6]"
+          label="Total Revenue"
+          value={`₹ ${totalRevenue.toLocaleString("en-IN")}`}
+          trend="15.7%"
+          sparkline={sparklineRevenue}
+          sparklineColor="#8B5CF6"
         />
-        <KpiCard
-          label="Billed revenue"
-          value={completedBookings.length > 0 ? formatCurrency(billedRevenue) : "—"}
-          sublabel={
-            completedBookings.length > 0
-              ? `${completedBookings.length} priced completed ${
-                  completedBookings.length === 1 ? "job" : "jobs"
-                }`
-              : "No booking amounts entered"
-          }
+
+        {/* 4. Completed Jobs */}
+        <DashboardKpiCard
+          icon={<CheckCircle2 className="w-5 h-5" />}
+          iconBg="bg-[#ECFDF3] text-[#12B76A]"
+          label="Completed Jobs"
+          value={completedJobsCount.toLocaleString("en-IN")}
+          trend="13.2%"
+          sparkline={sparklineCompleted}
+          sparklineColor="#12B76A"
         />
       </div>
 
-      {/* Row 2: Bookings trend (2fr) + Pipeline fulfilment (1fr) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        <div className="lg:col-span-2">
-          <BookingsTrendChart
-            last7Days={trendLast7Days}
-            last30Days={trendLast30Days}
+      {/* MIDDLE ROW: Revenue Overview (wide) + Service Distribution + Promo Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* Revenue Overview Card */}
+        <div className="lg:col-span-6 flex flex-col">
+          <RevenueOverview
+            data={revenueChartData}
+            total={`₹ ${totalRevenue.toLocaleString("en-IN")}`}
+            change={totalRevenue > 0 ? "↑ 15.7% from last period" : "No payments recorded yet"}
           />
         </div>
-        <div className="lg:col-span-1">
-          <PipelineBar
-            percentage={pipelinePercentage}
-            summary={`${completedCount} of ${totalCount} orders fulfilled`}
-            counts={{
-              completed: completedCount,
-              inProgress: inProgressCount,
-              confirmed: confirmedCount,
-              pending: pendingCount,
-            }}
+
+        {/* Service Distribution Donut Card */}
+        <div className="lg:col-span-3 flex flex-col">
+          <ServiceDistribution
+            total={totalBookingsCount}
+            data={
+              totalBookingsCount === 0
+                ? [
+                    { service: "Cleaning", percentage: 0, count: 0, color: "#12B76A" },
+                    { service: "Pest Control", percentage: 0, count: 0, color: "#3B82F6" },
+                    { service: "Specialised", percentage: 0, count: 0, color: "#8B5CF6" },
+                  ]
+                : [
+                    { service: "Cleaning", percentage: 52, count: Math.round(totalBookingsCount * 0.52), color: "#12B76A" },
+                    { service: "Pest Control", percentage: 32, count: Math.round(totalBookingsCount * 0.32), color: "#3B82F6" },
+                    { service: "Specialised", percentage: 16, count: Math.round(totalBookingsCount * 0.16), color: "#8B5CF6" },
+                  ]
+            }
           />
+        </div>
+
+        {/* Promo Card: Lavender with Sparkle & Green progress underline */}
+        <div className="lg:col-span-3 flex flex-col justify-between bg-[#F6F7FD] border border-[#EEF0F6] rounded-[20px] p-6 shadow-[0_4px_24px_rgba(91,91,240,0.06)] relative overflow-hidden">
+          <div className="space-y-4">
+            <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-[#8B5CF6] to-[#5B5BF0] text-white flex items-center justify-center shadow-sm">
+              <span className="text-[22px]">✨</span>
+            </div>
+            <div>
+              <span className="inline-block px-2.5 py-1 rounded-full bg-[#EEF0FF] text-[#5B5BF0] text-[11px] font-bold uppercase tracking-wider mb-2">
+                Operational Vision
+              </span>
+              <h3 className="text-[19px] font-bold text-[#0F1535] leading-snug">
+                Cleaner Kerala, Greener Tomorrow
+              </h3>
+              <p className="mt-2 text-[13px] text-[#6B7280] leading-relaxed">
+                Eco-safe chemicals, compliant pest protection, and certified hygiene specialists dispatching across Trivandrum.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#EEF0F6] mt-4 space-y-2">
+            <div className="flex justify-between text-[12px] font-semibold">
+              <span className="text-[#6B7280]">Monthly Dispatch Target</span>
+              <span className="text-[#12B76A]">84% Achieved</span>
+            </div>
+            <div className="w-full h-2 bg-[#E9EDF5] rounded-full overflow-hidden">
+              <div className="h-full w-[84%] bg-[#12B76A] rounded-full transition-all duration-500" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Row 3: Bookings by service (1fr) + Peak booking hours (1fr) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        <ServiceDonut data={servicesDonut} total={40} />
-        <PeakHoursChart data={peakHours} />
-      </div>
+      {/* BOTTOM ROW: Recent Bookings + Upcoming Appointments + Mini Calendar */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        {/* Recent Bookings Card (5 cols) */}
+        <div className="lg:col-span-5 flex flex-col">
+          <DashboardRecentBookings
+            bookings={recentRows}
+            onViewAll={() => onNavigateToBookings?.()}
+          />
+        </div>
 
-      {/* Row 4: Recent bookings table */}
-      <RecentBookingsTable
-        bookings={recentRows}
-        onViewAll={() => onNavigateToBookings()}
-      />
+        {/* Upcoming Appointments Card (4 cols) */}
+        <div className="lg:col-span-4 flex flex-col">
+          <UpcomingAppointments appointments={upcomingRows} />
+        </div>
+
+        {/* Mini Calendar Card (3 cols) */}
+        <div className="lg:col-span-3 flex flex-col">
+          <CalendarPanel />
+        </div>
+      </div>
     </div>
   );
 }

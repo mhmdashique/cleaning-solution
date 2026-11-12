@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { NavbarShell, FooterShell } from "@/components/layout/ClientShell";
 import { LocalBusinessJsonLd } from "@/components/seo/JsonLd";
+import { getApprovedReviews, getServices } from "@/lib/data/store";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -67,11 +68,32 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Structured-data rating is derived from real approved reviews only.
+  const [approvedReviews, services] = await Promise.all([
+    getApprovedReviews().catch(() => []),
+    getServices().catch(() => []),
+  ]);
+  const aggregateRating =
+    approvedReviews.length > 0
+      ? {
+          ratingValue: (
+            approvedReviews.reduce((sum, review) => sum + review.rating, 0) /
+            approvedReviews.length
+          ).toFixed(1),
+          reviewCount: approvedReviews.length,
+        }
+      : undefined;
+
+  const footerServices = services.map((service) => ({
+    title: service.title,
+    slug: service.slug,
+  }));
+
   return (
     <html lang="en">
       <head>
@@ -88,10 +110,10 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900 antialiased selection:bg-brand-100 selection:text-brand-900">
-        <LocalBusinessJsonLd />
+        <LocalBusinessJsonLd aggregateRating={aggregateRating} />
         <NavbarShell />
         <main className="flex-1 flex flex-col min-h-0">{children}</main>
-        <FooterShell />
+        <FooterShell services={footerServices} />
       </body>
     </html>
   );

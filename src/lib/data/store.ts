@@ -37,6 +37,7 @@ declare global {
         reviews: Review[];
         blog_posts: BlogPost[];
         site_settings: SiteSettings;
+        client_notes: Record<string, boolean>;
       }
     | undefined;
 }
@@ -48,7 +49,13 @@ if (!global.__planc_db) {
     reviews: [...INITIAL_REVIEWS],
     blog_posts: [...INITIAL_BLOG_POSTS],
     site_settings: { ...INITIAL_SITE_SETTINGS },
+    client_notes: {},
   };
+}
+
+// Guard against hot-reload snapshots created before client_notes existed.
+if (!global.__planc_db.client_notes) {
+  global.__planc_db.client_notes = {};
 }
 
 const memoryDb = global.__planc_db;
@@ -56,6 +63,22 @@ const memoryDb = global.__planc_db;
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+const DATA_FETCH_TIMEOUT_MS = 1800;
+
+async function withTimeout<T>(promise: Promise<T>, fallback: T, ms = DATA_FETCH_TIMEOUT_MS): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((resolve) => {
+        timeoutId = setTimeout(() => resolve(fallback), ms);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 export function generateBookingCode(): string {
   const year = new Date().getFullYear();
   const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -65,7 +88,7 @@ export function generateBookingCode(): string {
 // ---------------------------------------------------------------------------
 // SERVICES
 // ---------------------------------------------------------------------------
-export async function getServices(): Promise<Service[]> {
+async function fetchServices(): Promise<Service[]> {
   if (hasDb && db) {
     try {
       const { data, error } = await db
@@ -78,6 +101,10 @@ export async function getServices(): Promise<Service[]> {
     }
   }
   return memoryDb.services;
+}
+
+export async function getServices(): Promise<Service[]> {
+  return withTimeout(fetchServices(), memoryDb.services);
 }
 
 export async function getFeaturedServices(): Promise<Service[]> {
@@ -99,6 +126,117 @@ export async function getServiceBySlug(slug: string): Promise<Service | null> {
     }
   }
   return memoryDb.services.find((s) => s.slug === slug) || null;
+}
+
+export async function createService(
+  payload: Partial<Service>
+): Promise<Service> {
+  const newService: Service = {
+    id: payload.id || `srv-${Date.now()}`,
+    slug: payload.slug || `service-${Date.now()}`,
+    title: payload.title || "Untitled service",
+    category: payload.category || "cleaning",
+    short_desc: payload.short_desc || "",
+    long_desc: payload.long_desc || payload.short_desc || "",
+    image_url:
+      payload.image_url ||
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80",
+    icon: payload.icon || "Sparkles",
+    duration: payload.duration || "2–3 hours",
+    is_featured: payload.is_featured ?? false,
+    is_active: payload.is_active ?? true,
+    sort_order: payload.sort_order ?? memoryDb.services.length + 1,
+    meta_title: payload.meta_title || payload.title,
+    meta_description: payload.meta_description || payload.short_desc,
+    created_at: new Date().toISOString(),
+  };
+
+  if (hasDb && db) {
+    try {
+      const { id: _ignoredId, created_at: _ignoredCreatedAt, ...insertPayload } =
+        newService;
+      const { data, error } = await db
+        .from("services")
+        .insert(insertPayload)
+        .select()
+        .single();
+      if (!error && data) {
+        memoryDb.services.unshift(data as Service);
+        return data as Service;
+      }
+    } catch {
+      // fallback to memory
+    }
+  }
+
+  memoryDb.services.unshift(newService);
+  return newService;
+}
+
+export async function updateService(
+  id: string,
+  payload: Partial<Service>
+): Promise<boolean> {
+  let persisted = false;
+
+  if (hasDb && db) {
+    try {
+      const { error } = await db
+        .from("services")
+        .update(payload)
+        .eq("id", id);
+      if (!error) persisted = true;
+    } catch {
+      // fallback to memory
+    }
+  }
+
+  const target = memoryDb.services.find(
+    (service) => service.id === id || service.slug === id
+  );
+  if (target) {
+    Object.assign(target, payload);
+    return true;
+  }
+
+  return persisted;
+}
+
+export async function deleteService(id: string): Promise<boolean> {
+  let persisted = false;
+
+  if (hasDb && db) {
+    try {
+      const { error } = await db.from("services").delete().eq("id", id);
+      if (!error) persisted = true;
+    } catch {
+      // fallback to memory
+    }
+  }
+
+  const index = memoryDb.services.findIndex(
+    (service) => service.id === id || service.slug === id
+  );
+  if (index !== -1) {
+    memoryDb.services.splice(index, 1);
+    return true;
+  }
+
+  return persisted;
+}
+
+export async function setServiceFeatured(
+  id: string,
+  isFeatured: boolean
+): Promise<boolean> {
+  return updateService(id, { is_featured: isFeatured });
+}
+
+export async function setServiceActive(
+  id: string,
+  isActive: boolean
+): Promise<boolean> {
+  return updateService(id, { is_active: isActive });
 }
 
 // ---------------------------------------------------------------------------
@@ -231,7 +369,7 @@ export async function updateBookingStatus(
       const { error } = await db
         .from("bookings")
         .update(updateData)
-        .eq("id", id);
+        .or(`id.eq.${id},booking_code.eq.${id}`);
       if (!error) return true;
     } catch {
       // fallback
@@ -258,7 +396,7 @@ export async function updateBookingAmount(
     const { data, error } = await db
       .from("bookings")
       .update({ amount })
-      .eq("id", id)
+      .or(`id.eq.${id},booking_code.eq.${id}`)
       .select("id")
       .maybeSingle();
 
@@ -286,7 +424,7 @@ export async function updateBookingPaymentStatus(
     const { data, error } = await db
       .from("bookings")
       .update({ is_paid: isPaid })
-      .eq("id", id)
+      .or(`id.eq.${id},booking_code.eq.${id}`)
       .select("id")
       .maybeSingle();
 
@@ -309,7 +447,7 @@ export async function updateBookingPaymentStatus(
 // ---------------------------------------------------------------------------
 // REVIEWS
 // ---------------------------------------------------------------------------
-export async function getApprovedReviews(): Promise<Review[]> {
+async function fetchApprovedReviews(): Promise<Review[]> {
   if (hasDb && db) {
     try {
       const { data, error } = await db
@@ -323,6 +461,10 @@ export async function getApprovedReviews(): Promise<Review[]> {
     }
   }
   return memoryDb.reviews.filter((r) => r.approved);
+}
+
+export async function getApprovedReviews(): Promise<Review[]> {
+  return withTimeout(fetchApprovedReviews(), memoryDb.reviews.filter((r) => r.approved));
 }
 
 export async function getAllReviews(): Promise<Review[]> {
@@ -430,7 +572,7 @@ export async function deleteReview(id: string): Promise<boolean> {
 // ---------------------------------------------------------------------------
 // BLOG POSTS
 // ---------------------------------------------------------------------------
-export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
+async function fetchPublishedBlogPosts(): Promise<BlogPost[]> {
   if (hasDb && db) {
     try {
       const { data, error } = await db
@@ -444,6 +586,10 @@ export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
     }
   }
   return memoryDb.blog_posts.filter((b) => b.published);
+}
+
+export async function getPublishedBlogPosts(): Promise<BlogPost[]> {
+  return withTimeout(fetchPublishedBlogPosts(), memoryDb.blog_posts.filter((b) => b.published));
 }
 
 export async function getBlogPostBySlug(
@@ -538,9 +684,139 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
   return false;
 }
 
+export async function updateBlogPost(
+  id: string,
+  payload: Partial<BlogPost>
+): Promise<boolean> {
+  let persisted = false;
+
+  if (hasDb && db) {
+    try {
+      const { error } = await db
+        .from("blog_posts")
+        .update(payload)
+        .eq("id", id);
+      if (!error) persisted = true;
+    } catch {
+      // fallback
+    }
+  }
+
+  const target = memoryDb.blog_posts.find(
+    (post) => post.id === id || post.slug === id
+  );
+  if (target) {
+    Object.assign(target, payload);
+    return true;
+  }
+
+  return persisted;
+}
+
+export async function setBlogPostPublished(
+  id: string,
+  published: boolean
+): Promise<boolean> {
+  return updateBlogPost(id, { published });
+}
+
+export async function duplicateBlogPost(
+  id: string
+): Promise<BlogPost | null> {
+  const source = memoryDb.blog_posts.find(
+    (post) => post.id === id || post.slug === id
+  );
+
+  let original = source;
+  if (!original && hasDb && db) {
+    try {
+      const { data, error } = await db
+        .from("blog_posts")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (!error && data) original = data as BlogPost;
+    } catch {
+      // no source available
+    }
+  }
+
+  if (!original) return null;
+
+  const suffix = `copy-${Date.now().toString(36)}`;
+  return createBlogPost({
+    ...original,
+    id: undefined,
+    slug: `${original.slug}-${suffix}`,
+    title: `${original.title} (Copy)`,
+    published: false,
+    published_at: new Date().toISOString(),
+    meta_title: original.meta_title
+      ? `${original.meta_title} (Copy)`
+      : `${original.title} (Copy)`,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// CLIENT NOTES (handled state keyed by booking code)
+// ---------------------------------------------------------------------------
+export async function getClientNoteStates(): Promise<Record<string, boolean>> {
+  const states: Record<string, boolean> = { ...memoryDb.client_notes };
+
+  if (hasDb && db) {
+    try {
+      const { data, error } = await db
+        .from("client_notes")
+        .select("booking_code, handled");
+      if (!error && data) {
+        for (const row of data as Array<{
+          booking_code: string;
+          handled: boolean;
+        }>) {
+          states[row.booking_code] = row.handled;
+        }
+      }
+    } catch {
+      // fallback to memory
+    }
+  }
+
+  return states;
+}
+
+export async function setClientNoteHandled(
+  bookingCode: string,
+  handled: boolean
+): Promise<boolean> {
+  memoryDb.client_notes[bookingCode] = handled;
+
+  if (hasDb && db) {
+    try {
+      const { error } = await db.from("client_notes").upsert(
+        {
+          booking_code: bookingCode,
+          handled,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "booking_code" }
+      );
+      if (!error) return true;
+    } catch {
+      // fallback to memory
+    }
+  }
+
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // SITE SETTINGS
 // ---------------------------------------------------------------------------
 export async function getSiteSettings(): Promise<SiteSettings> {
+  return memoryDb.site_settings;
+}
+
+export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<SiteSettings> {
+  memoryDb.site_settings = { ...memoryDb.site_settings, ...patch };
   return memoryDb.site_settings;
 }

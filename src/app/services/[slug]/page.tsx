@@ -216,7 +216,9 @@ export default async function ServiceDetailPage({ params }: Props) {
                   <span className="flex items-center gap-1.5 font-medium">
                     <Clock className="w-3.5 h-3.5 text-brand-600" /> Duration:
                   </span>
-                  <span className="font-bold text-slate-800">2 - 4 Hours</span>
+                  <span className="font-bold text-slate-800">
+                    {service.duration || "On request"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-medium">

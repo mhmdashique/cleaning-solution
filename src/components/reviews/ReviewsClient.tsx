@@ -41,9 +41,9 @@ export default function ReviewsClient({
     1: reviews.filter((r) => r.rating === 1).length,
   };
 
-  const averageRating = total > 0
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / total).toFixed(1)
-    : "5.0";
+  const averageScore =
+    total > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / total : null;
+  const averageRating = averageScore !== null ? averageScore.toFixed(1) : "—";
 
   const filteredReviews = reviews.filter((r) => {
     if (selectedRating === "all") return true;
@@ -87,11 +87,20 @@ export default function ReviewsClient({
               <div className="space-y-1">
                 <div className="flex items-center gap-1 text-amber-500">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        averageScore !== null && i < Math.round(averageScore)
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-200"
+                      }`}
+                    />
                   ))}
                 </div>
                 <p className="text-xs text-slate-500 font-medium">
-                  Based on {total} local Kerala reviews
+                  {total > 0
+                    ? `Based on ${total} local Kerala review${total !== 1 ? "s" : ""}`
+                    : "No published reviews yet"}
                 </p>
               </div>
             </div>
@@ -297,7 +306,7 @@ export default function ReviewsClient({
                   type="text"
                   name="name"
                   required
-                  placeholder="e.g. Sreelakshmi Nair"
+                  placeholder="e.g. Your name"
                   className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600"
                 />
               </div>

@@ -1,4 +1,4 @@
--- ==============================================================================
+﻿-- ==============================================================================
 -- PLAN C Cleaning Solutions - Seed Data
 -- ==============================================================================
 
@@ -13,7 +13,9 @@ INSERT INTO site_settings (key, value) VALUES
 ('address', 'Thrikannapuram, Thiruvananthapuram, Kerala - 695032'),
 ('working_hours', 'Monday - Sunday: 7:00 AM - 9:00 PM'),
 ('experience_years', '5+'),
-('service_areas', 'Thrikannapuram, Pattom, Kowdiar, Kazhakkoottam, Technopark, Attingal, Nedumangad, Neyyattinkara, Vattiyoorkavu, Vellayambalam, Thycaud, Varkala')
+('service_areas', 'Thrikannapuram, Pattom, Kowdiar, Kazhakkoottam, Technopark, Attingal, Nedumangad, Neyyattinkara, Vattiyoorkavu, Vellayambalam, Thycaud, Varkala, Kattakada, Kanjirampara, Trivandrum, Kollam'),
+('meta_title', 'PLAN C Cleaning Solutions - Professional House Cleaning & Pest Control in Kerala'),
+('meta_description', 'PLAN C Cleaning Solutions offers expert house cleaning, pest control, and specialized services across Thiruvananthapuram and Kerala. Book now for a spotless home!')
 ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- 2. CORE SERVICES
@@ -127,7 +129,7 @@ INSERT INTO services (slug, title, category, short_desc, long_desc, image_url, i
 ('bed-bugs-treatment', 'Bed Bugs Eradication & Steam Wash', 'pest_control',
  'Two-stage intensive contact and residual knockdown plus high-heat mattress steaming.',
  'Bed bug infestations disrupt sleep and cause distressing bites. We perform thorough thermal steaming combined with safe micro-encapsulated sprays in bed frames, headboards, mattress seams, and switchboard cavities.',
- 'https://images.unsplash.com/photo-1540518614846-7ede433c4ef5?auto=format&fit=crop&w=1200&q=80',
+ 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
  'AlertCircle', false, 14,
  'Bed Bug Treatment in Thiruvananthapuram | PLAN C',
  'Guaranteed bed bug eradication with dual visit treatments and mattress steaming in Kerala.'),
@@ -224,247 +226,9 @@ ON CONFLICT (slug) DO UPDATE SET
   meta_title = EXCLUDED.meta_title,
   meta_description = EXCLUDED.meta_description;
 
--- 3. REVIEWS SEED (Realistic South Kerala names & locations)
-INSERT INTO reviews (name, location, rating, service_name, comment, approved, created_at) VALUES
-('Anil Kumar', 'Pattom, Thiruvananthapuram', 5, 'Full House Deep Cleaning',
- 'Exceptional service by PLAN C. Their crew arrived right on time with rotary scrubbers and specialized bathroom cleaners. Our 4BHK house in Pattom feels like brand new! Highly recommended.', true, NOW() - INTERVAL '3 days'),
 
-('Sreelakshmi Nair', 'Kowdiar, Thiruvananthapuram', 5, 'Kitchen Deep Cleaning & Chimney Degreasing',
- 'The oil stains around our modular kitchen chimney were stubborn, but the PLAN C team completely dismantled the filters and brought back the original shine. Very polite and respectful staff.', true, NOW() - INTERVAL '6 days'),
-
-('Rajesh Pillai', 'Kazhakkoottam, Trivandrum', 5, 'Sofa & Mattress Shampooing',
- 'Got our 6-seater fabric sofa and two queen mattresses shampooed. They extracted unbelievable amount of hidden dust. Dried within 4 hours. Great work team PLAN C!', true, NOW() - INTERVAL '9 days'),
-
-('Divya S.', 'Vattiyoorkavu, Thiruvananthapuram', 5, 'Bathroom Steam Cleaning',
- 'Hard water scaling was an ongoing headache in our master bathroom. Their team descaled the glass partition and tiles without any foul chemical smell. 10/10 quality.', true, NOW() - INTERVAL '12 days'),
-
-('Mohammed Shafeer', 'Attingal, Kerala', 5, 'Anti-Termite Treatment',
- 'Detected termites near our wooden door frames. PLAN C did a comprehensive perimeter drill barrier treatment. The technician explained every step and gave a warranty card. Peace of mind!', true, NOW() - INTERVAL '15 days'),
-
-('Lekha Menon', 'Nedumangad, Thiruvananthapuram', 5, 'Water Tank & Sump Cleaning',
- 'The 6-stage cleaning with UV disinfection was impressive. The overhead 1000L tank and underground sump water is now crystal clear. Professional and prompt.', true, NOW() - INTERVAL '18 days'),
-
-('Arun Vijayan', 'Neyyattinkara, Trivandrum', 5, 'Outdoor Interlock Paver Cleaning',
- 'Our driveway had thick green moss from the heavy monsoon. Their high-pressure jet wash peeled the moss off in minutes! Paving looks as fresh as the day it was laid.', true, NOW() - INTERVAL '21 days'),
-
-('Anitha Das', 'Kattakada, Kerala', 5, 'Cockroach Gel Treatment',
- 'Zero smell, no need to take out kitchen utensils. Within 5 days, all cockroach traces vanished from our kitchen cabinets. Very reasonable pricing too.', true, NOW() - INTERVAL '25 days'),
-
-('Vishnu Prasad', 'Technopark Phase 3, Trivandrum', 5, 'Office Deep Cleaning',
- 'Hired PLAN C for our 35-seater IT office deep sanitisation over the weekend. Carpet vacuuming and workstation dusting was top tier. Our staff loved the fresh atmosphere on Monday morning.', true, NOW() - INTERVAL '28 days'),
-
-('Fathima Beevi', 'Varkala, Trivandrum', 5, 'Post-Construction Cleaning',
- 'Had completed home renovation with paint and cement dust everywhere. The PLAN C team spent 8 solid hours scrubbing floor tiles and glass windows. Super happy with the result.', true, NOW() - INTERVAL '32 days'),
-
-('Sujith Chandran', 'Thycaud, Thiruvananthapuram', 5, 'Full House Deep Cleaning',
- 'Booked them for pre-festival cleaning. Five cleaners arrived with proper uniform and gear. Every nook and corner was inspected and cleaned. Will hire them regularly!', true, NOW() - INTERVAL '35 days'),
-
-('Meera Raj', 'Vellayambalam, Trivandrum', 5, 'Garden & Yard Clearing',
- 'Overgrown weeds and coconut fronds removed quickly and neatly loaded away. Honest pricing with no hidden charges. Very transparent service.', true, NOW() - INTERVAL '40 days'),
-
-('Harikrishnan N.', 'Pettah, Thiruvananthapuram', 5, 'Floor Scrubbing & Polishing',
- 'Our Kota stone flooring had become dull over 10 years. Single disc scrubbing brought back a rich, clean finish. Really impressed by the modern machinery they use.', true, NOW() - INTERVAL '45 days'),
-
-('Blessy Thomas', 'Kanjirampara, Thiruvananthapuram', 5, 'Bed Bugs Treatment',
- 'We were struggling with bed bugs in guest room mattresses for months. Two rounds of treatment completely resolved the problem. Professional and empathetic team.', true, NOW() - INTERVAL '50 days');
-
--- 4. BLOG POSTS SEED (Rich SEO-targeted local articles)
-INSERT INTO blog_posts (slug, title, excerpt, content, cover_image, category, tags, author, published, meta_title, meta_description, published_at) VALUES
-('deep-cleaning-checklist-for-kerala-homes',
- 'Deep Cleaning Checklist for Kerala Homes: Ultimate Room-by-Room Guide',
- 'From combating high coastal humidity to tackling hard water stains on tiles, here is the complete checklist tailored for Kerala residences.',
- '# The Complete Deep Cleaning Checklist for Kerala Homes
-
-Maintaining a home in Kerala comes with unique environmental challenges: tropical humidity above 80%, seasonal monsoons, red soil dust, and hard borewell water. A routine mop and sweep isn''t enough to keep hidden mildew, grease, and calcium scale at bay.
-
-Here is the professional room-by-room deep cleaning checklist formulated by PLAN C Cleaning Solutions.
-
----
-
-## 1. Living Room & Common Areas
-- **Ceiling Fans & Light Fixtures**: Wipe blades with anti-static microfiber cloth; wash glass chandelier shades.
-- **Window Sills & Mosquito Meshes**: Unclip nylon meshes and wash with mild detergent; vacuum window sliders.
-- **Curtains & Blinds**: Steam vacuum heavy draperies or launder sheer curtains.
-- **Sofa & Upholstery**: Vacuum crevice areas under cushions; opt for injection-extraction shampooing every 6 months to eliminate dust mites.
-
-## 2. Kitchen & Pantry
-- **Chimney & Exhaust Blower**: Kerala cuisine involves generous use of coconut oil and spices, forming sticky greasy crusts. Soak baffle filters in warm caustic/degreaser solutions.
-- **Behind Refrigerators & Heavy Appliances**: Pull out appliances to scrub accumulated cobwebs, pet hair, and oil vapor films.
-- **Modular Cabinets**: Empty shelves, wipe inner laminate linings, and apply insect repellent gel in corner hinges.
-- **Tile Grout Lines**: Use neutral pH tile cleaners to dissolve dark grease lines between tiles without eroding grout.
-
-## 3. Bathrooms & Washrooms
-- **Hard Water Descaling**: Kerala borewell water leaves chalky white and yellow mineral rings on taps, showers, and ceramic washbasins. Use non-hydrochloric descaling agents.
-- **Exhaust Vent Scrubbing**: Clear moisture buildup and lint from bathroom ventilation grilles.
-- **Floor Tile Scrubbing**: Rotary mechanized scrubbing restores anti-skid floor texture and destroys black slime.
-
-## 4. Water Tank & Exterior Areas
-- Clean overhead Sintex/concrete water tanks twice a year to prevent sediment and bacterial biofilm.
-- High-pressure wash outdoor interlock pathways before and after the South-West monsoon.
-
-> **Need hands-on help?** PLAN C Cleaning Solutions provides comprehensive house deep cleaning across Thiruvananthapuram, Kowdiar, Pattom, Kazhakkoottam, and nearby towns. Call **7994342372** for a free site assessment.',
- 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80',
- 'Home Cleaning',
- ARRAY['Deep Cleaning', 'Kerala Homes', 'Trivandrum', 'Home Maintenance'],
- 'PLAN C Technical Crew',
- true,
- 'Deep Cleaning Checklist for Kerala Homes | PLAN C Cleaning',
- 'Complete room-by-room deep cleaning guide for homes in Thiruvananthapuram and Kerala. Expert tips for tackling humidity, hard water stains, and kitchen grease.',
- NOW() - INTERVAL '2 days'),
-
-('how-to-prevent-termites-in-kerala-humid-climate',
- 'How to Prevent Termites in Kerala''s Humid Climate: An Expert Guide',
- 'Subterranean termites thrive in Kerala''s red soil and heavy moisture. Learn the early warning indicators and professional defense barriers.',
- '# How to Prevent Termites in Kerala''s Humid Climate
-
-Termites (known locally as *chempan* or *karayan*) cause millions of rupees in structural damage to Kerala homes every year. The combination of rich laterite soil, frequent rainfall, and warm humidity makes South Kerala an ideal breeding ground for subterranean termites.
-
----
-
-## The Hidden Danger of Subterranean Termites
-Unlike drywood termites, subterranean termites live deep in the soil and build mud tunnels (shelter tubes) to access wood, paper, and cellulose inside your home. By the time you notice hollow wooden door frames or bubbling wall paint, the internal structural integrity of your furniture may already be destroyed.
-
-## 5 Early Warning Signs in Your Home
-1. **Mud Tubes on Foundation & Skirting**: Thin brown mud trails climbing up foundation pillars, skirting tiles, or inside electrical conduit pipes.
-2. **Hollow Sounding Timber**: Tapping wooden window frames or wardrobe backs produces an empty, papery sound.
-3. **Discarded Wings Near Windows**: Swarming alates (flying termites) shed their translucent wings in piles near light fixtures during pre-monsoon evenings.
-4. **Stuck Doors and Windows**: Moisture introduced by termite nests can cause timber frames to swell and jam.
-5. **Fine Wood Frass & Sawdust**: Piles of powdery pellets beneath wooden beams.
-
-## Preventive Measures for Homeowners
-- **Eliminate Soil-to-Wood Contact**: Ensure wooden trellis, garden mulch, and fence posts do not directly touch building foundations.
-- **Fix Plumbing Leaks Promptly**: Damp walls create the wet environment subterranean colonies need to survive.
-- **Ensure Proper Ventilation**: Keep attics, basements, and modular under-sink cabinets dry with good airflow.
-- **Schedule Chemical Barrier Drilling**: Professional anti-termite treatment involves drilling precision 12mm holes around the perimeter and injecting termiticide barriers with multi-year warranties.
-
-> **Protect your dream home**: PLAN C Pest Control provides certified anti-termite treatments across Thiruvananthapuram and Kollam with up to 5 years guarantee. Call **7994342372** to book an inspection.',
- 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
- 'Pest Control',
- ARRAY['Termite Control', 'Pest Prevention', 'Kerala Climate', 'Home Care'],
- 'PLAN C Pest Control Specialist',
- true,
- 'Termite Prevention Guide for Kerala Homes | PLAN C Pest Control',
- 'Learn how to detect and prevent subterranean termites in Kerala. Expert advice on termite barriers, mud tube detection, and long-term warranties.',
- NOW() - INTERVAL '5 days'),
-
-('how-often-should-you-clean-your-water-tank',
- 'How Often Should You Clean Your Water Tank in Kerala?',
- 'Drinking water safety is paramount. Discover why seasonal sediment buildup necessitates bi-annual 6-stage mechanized tank sanitisation.',
- '# How Often Should You Clean Your Water Tank in Kerala?
-
-In Kerala, most residences rely either on open wells, deep borewells, or municipal water authority (KWA) pipelines connected to underground sumps and overhead Sintex or concrete tanks.
-
-Yet, water tanks are frequently the most neglected aspect of household hygiene.
-
----
-
-## What Lurks Inside an Uncleaned Water Tank?
-Even clean-looking tap water carries trace minerals, dissolved solids, and microbial spores. Over 3 to 6 months:
-- **Sedimentation**: Heavy iron, silt, and clay settle at the base, creating a 2 to 5 inch thick layer of sludge.
-- **Biofilm & Algae**: Sunlight and warm temperatures allow green algae and slick bacterial biofilm to cling to tank walls.
-- **Pathogens**: Stagnant sediment fosters bacteria including E. coli, Salmonella, and coliforms, causing waterborne illnesses, skin rashes, and hair fall.
-
-## Recommended Cleaning Frequency
-- **Residential Overhead Tanks (1,000L - 2,000L)**: Every **4 to 6 months**.
-- **Underground Sumps**: At least **twice a year**, ideally right after the heavy monsoon downpours when groundwater runoff carries maximum turbidity.
-- **Restaurants, Hotels & Hostels**: **Quarterly (every 3 months)** to meet Food Safety and Health Standards.
-
-## Why Manual Scrubbing With Bleaching Powder Fails
-Traditional local cleaners use harsh bleaching powder and an old brush, often leaving strong chlorine chemical smells and failing to eliminate microscopic biofilm in corners.
-
-PLAN C''s 6-Stage Mechanized Protocol:
-1. **Deep Dewatering**: Specialized submersible pumps drain old stagnant water.
-2. **Sludge Extraction**: Industrial wet vacuum cleaners suck out thick bottom muck.
-3. **High-Pressure Rotary Jet Wash**: Strips stubborn algae and mineral crusts from wall corners.
-4. **Vacuum Residue Clearing**: Clears all dislodged debris completely.
-5. **Anti-Bacterial Spraying**: Safe, food-grade eco-friendly disinfectant sanitizes all surfaces.
-6. **UV Radiator Sterilization**: High-intensity ultraviolet lamp kills any remaining floating spores.
-
-> **Ensure 100% pure tap water for your family**: Book our 6-stage water tank sanitisation service in Trivandrum today at **7994342372**.',
- 'https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d?auto=format&fit=crop&w=1200&q=80',
- 'Water Tank Hygiene',
- ARRAY['Water Tank Cleaning', 'Health & Safety', 'Thiruvananthapuram', 'Pure Water'],
- 'PLAN C Technical Crew',
- true,
- 'Water Tank Cleaning Frequency & Hygiene in Kerala | PLAN C',
- 'How often should you clean overhead tanks and sumps in Kerala? Discover the 6-stage mechanized cleaning procedure by PLAN C Cleaning Solutions.',
- NOW() - INTERVAL '8 days'),
-
-('bed-bug-removal-what-actually-works',
- 'Bed Bug Removal in Kerala: What Actually Works (and What Fails)',
- 'Tired of ineffective camphor and petrol hacks? Here is the scientific approach to eliminating bed bugs permanently from mattresses and furniture.',
- '# Bed Bug Removal: What Actually Works (and What Fails)
-
-Bed bug infestations are on the rise across Kerala, particularly in rental apartments, university hostels, and frequently traveled family homes in Trivandrum, Kochi, and Kozhikode.
-
-Because bed bug eggs are microscopic and resistant to ordinary pesticide sprays, homemade hacks rarely eliminate the colony.
-
----
-
-## Popular DIY Hacks That Fail
-- **Camphor (*Karpooram*)**: May temporarily repel bugs from a single pillow, but pushes the colony into nearby wardrobe crevices and electrical sockets.
-- **Kerosene / Petrol**: Highly flammable, produces hazardous toxic fumes, stains mattresses, and does not kill bed bug eggs.
-- **Sun-Drying Mattresses**: In Kerala''s humid air, outdoor sunlight rarely raises the mattress core temperature above the 55°C required to kill eggs nested 4 inches deep.
-
-## What Science & Professional IPM Recommends
-
-### 1. High-Heat Thermal Steam Treatment
-Bed bugs and their eggs die instantly when exposed to temperatures exceeding 60°C. Professional steam cleaners inject 140°C dry steam into mattress tufts, seams, headboard slots, and sofa joints without soaking the fabric.
-
-### 2. Dual-Visit Chemical Treatment
-Pesticides kill crawling adults and nymphs, but unhatched eggs remain protected by their protective shell. Therefore, a professional service **must include a second round after 12-15 days** to target newly hatched nymphs before they reach reproductive maturity.
-
-### 3. Mattress Encasement & Room Prep
-Wash all bed sheets, blankets, and pillow covers in hot water (above 60°C). Vacuum headboards and seal cracks along wall baseboards.
-
-> **Sleep peacefully again without bites**: Contact PLAN C Pest Control for discreet, guaranteed bed bug eradication in Thiruvananthapuram. Call **7994342372**.',
- 'https://images.unsplash.com/photo-1540518614846-7ede433c4ef5?auto=format&fit=crop&w=1200&q=80',
- 'Pest Control',
- ARRAY['Bed Bug Treatment', 'Pest Control Kerala', 'Sleep Hygiene', 'Disinfection'],
- 'PLAN C Technical Crew',
- true,
- 'Bed Bug Removal in Kerala: Complete Eradication Guide | PLAN C',
- 'Discover why DIY bed bug hacks fail and how PLAN C''s thermal steam and targeted pest control eliminates bed bugs completely.',
- NOW() - INTERVAL '11 days'),
-
-('monsoon-cleaning-tips-for-thiruvananthapuram-homes',
- 'Monsoon Cleaning Tips for Thiruvananthapuram Homes',
- 'Prepare your home against slippery moss, black fungal mildew, damp closets, and roof drain clogs during Kerala rains.',
- '# Monsoon Cleaning Tips for Thiruvananthapuram Homes
-
-The monsoon in Kerala brings lush greenery and cool weather, but also brings constant humidity, mud splatter, musty odors, and treacherous green moss on outdoor tiles.
-
-Here is how you can safeguard your home before and during the monsoon season.
-
----
-
-## 1. Eliminate Slippery Interlock Algae Early
-Kerala''s heavy showers quickly turn interlock pavers, car porches, and granite steps into slip hazards. High-pressure jet washing removes the slime layer deep in the concrete pores. Applying an anti-fungal wash ensures moss doesn''t reappear after the next rainfall.
-
-## 2. Fight Fungus and Mildew in Wardrobes
-Keep camphor tablets, silica gel packets, or moisture absorber boxes inside wooden wardrobes to stop mold from growing on leather shoes, cotton sarees, and coats. Wipe interior cabinet walls with a diluted vinegar-water solution every fortnight.
-
-## 3. Clear Roof Gutters & Rainwater Inlets
-Dead leaves, coconut fronds, and dirt block roof drain pipes, causing water stagnation and terrace seepage. Clean your terrace spouts and gutters before the torrential rains begin.
-
-## 4. Ward Off Monsoon Pests
-The wet ground drives cockroaches, centipedes, and rodents indoors seeking shelter and food. Seal pipe inlets under sinks and schedule preventative pest control before the season sets in.
-
-> **Prepare your home for the rains**: PLAN C offers customized pre-monsoon and post-monsoon deep cleaning packages in Thiruvananthapuram. Call **7994342372** today.',
- 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1200&q=80',
- 'Seasonal Cleaning',
- ARRAY['Monsoon Cleaning', 'Trivandrum', 'Outdoor Cleaning', 'Mold Prevention'],
- 'PLAN C Editorial Team',
- true,
- 'Monsoon Cleaning Tips for Thiruvananthapuram Homes | PLAN C',
- 'Keep your house safe from mold, slippery moss, and pests during Kerala rains with these professional monsoon cleaning tips.',
- NOW() - INTERVAL '14 days');
-
--- 5. SAMPLE BOOKINGS (For admin overview and tracking demonstration)
-INSERT INTO bookings (booking_code, name, email, phone, service_name, address, preferred_date, message, status, assigned_team, admin_notes) VALUES
-('PC-2025-0001', 'Anand Krishnan', 'anand.k@example.com', '9847123456', 'Full House Deep Cleaning', 'TC 14/1205, Jawahar Nagar, Kowdiar, Thiruvananthapuram', CURRENT_DATE + INTERVAL '2 days', 'Need deep cleaning before housewarming ceremony. 3BHK villa.', 'Confirmed', 'Unit A - Lead: Suresh', 'Customer requested morning 8:30 AM arrival.'),
-('PC-2025-0002', 'Revathi Chandran', 'revathi.c@example.com', '9745678901', 'Water Tank & Sump Cleaning', 'Flat 4B, Heera Towers, Pattom, Trivandrum', CURRENT_DATE + INTERVAL '1 day', 'Underground sump 4000L and overhead 1000L tank cleaning.', 'In progress', 'Unit C - Lead: Rajesh', 'Technicians on route with jet pumps.'),
-('PC-2025-0003', 'Dr. Thomas George', 'dr.thomas@example.com', '9447112233', 'General Pest Control', 'Villa 12, Technopark Enclave, Kazhakkoottam', CURRENT_DATE + INTERVAL '4 days', 'Cockroach and ant treatment in kitchen and store room.', 'Pending', 'Unit B - Lead: Dileep', 'Pending customer confirmation on Saturday slot.'),
-('PC-2025-0004', 'Deepa Jayakumar', 'deepa.j@example.com', '9895001122', 'Sofa, Mattress & Carpet Shampooing', 'Devi Kripa, Thrikannapuram, Thiruvananthapuram', CURRENT_DATE - INTERVAL '1 day', 'L-shaped fabric sofa shampooing and stain removal.', 'Completed', 'Unit A - Lead: Suresh', 'Service completed successfully. Customer left 5 star review.')
-ON CONFLICT (booking_code) DO NOTHING;
-
+-- ==============================================================================
+-- No sample reviews, blog posts or bookings are seeded.
+-- Those tables start empty: real records are created through the admin
+-- dashboard or via the public booking / review / contact forms.
+-- ==============================================================================

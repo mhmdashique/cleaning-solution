@@ -1,328 +1,325 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import PageHeader from "../shared/PageHeader";
-import Toolbar from "../shared/Toolbar";
-import DataTable from "../shared/DataTable";
-import StatusPill from "../shared/StatusPill";
-import ConfirmDialog from "../shared/ConfirmDialog";
+import { useState } from "react";
+import { Plus, Search, Edit2, Trash2, Copy, Eye, EyeOff, X } from "lucide-react";
 import { AdminArticle } from "@/types/admin";
-import { 
-  Plus, 
-  Edit, 
-  ExternalLink, 
-  MoreVertical, 
-  Copy, 
-  Trash2 
-} from "lucide-react";
-import Link from "next/link";
 
 interface ArticlesViewProps {
   articles: AdminArticle[];
-  onCreateArticle: (art: Partial<AdminArticle>) => void;
+  onCreateArticle: (data: Partial<AdminArticle>) => void;
+  onUpdateArticle: (id: string, patch: Partial<AdminArticle>) => void;
   onDuplicateArticle: (id: string) => void;
+  onToggleStatus: (id: string) => void;
   onDeleteArticle: (id: string) => void;
 }
+
+const CATEGORIES = [
+  "Home cleaning",
+  "Pest prevention",
+  "Pest control tips",
+  "Commercial cleaning",
+  "Water tank care",
+  "Upholstery care",
+  "General tips",
+] as const;
 
 export default function ArticlesView({
   articles,
   onCreateArticle,
+  onUpdateArticle,
   onDuplicateArticle,
+  onToggleStatus,
   onDeleteArticle,
 }: ArticlesViewProps) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
-
-  const [showNewModal, setShowNewModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingArticle, setEditingArticle] = useState<AdminArticle | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  // Form State
+  // Form state
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<AdminArticle["category"]>("Home cleaning");
   const [excerpt, setExcerpt] = useState("");
-  const [author, setAuthor] = useState("Plan C Editorial");
+  const [category, setCategory] = useState<string>("Home cleaning");
+  const [author, setAuthor] = useState("Plan C Crew");
+  const [status, setStatus] = useState<"Published" | "Draft">("Published");
 
-  const filteredArticles = useMemo(() => {
-    return articles.filter((a) => {
-      const matchesStatus = statusFilter === "All" || a.status === statusFilter;
-      const q = search.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        a.title.toLowerCase().includes(q) ||
-        a.excerpt.toLowerCase().includes(q) ||
-        a.author.toLowerCase().includes(q);
+  const filtered = articles.filter((a) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return a.title.toLowerCase().includes(q) || a.category.toLowerCase().includes(q) || a.author.toLowerCase().includes(q);
+  });
 
-      return matchesStatus && matchesSearch;
-    });
-  }, [articles, statusFilter, search]);
-
-  const paginatedArticles = useMemo(() => {
-    const start = (page - 1) * pageSize;
-    return filteredArticles.slice(start, start + pageSize);
-  }, [filteredArticles, page]);
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    onCreateArticle({
-      title,
-      slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      category,
-      excerpt: excerpt || "Expert cleaning and pest prevention guidance for Kerala homeowners.",
-      author: author || "Plan C Crew",
-      date: "18 May 2025",
-      status: "Published",
-    });
-
+  const handleOpenAdd = () => {
     setTitle("");
     setExcerpt("");
-    setShowNewModal(false);
+    setCategory("Home cleaning");
+    setAuthor("Plan C Crew");
+    setStatus("Published");
+    setShowAddModal(true);
   };
 
-  const columns = [
-    {
-      header: "Category",
-      cell: (a: AdminArticle) => (
-        <span className="text-[12px] px-2.5 py-0.5 rounded-full bg-[#F1F4F2] text-[#5D6B65] font-medium border border-[#E3E8E5]">
-          {a.category}
-        </span>
-      ),
-    },
-    {
-      header: "Title & Excerpt",
-      cell: (a: AdminArticle) => (
-        <div className="space-y-1 max-w-md py-1">
-          <div className="font-semibold text-[#12201B] text-[14.5px] leading-snug">
-            {a.title}
-          </div>
-          <p className="text-[13px] text-[#5D6B65] line-clamp-2 leading-relaxed">
-            {a.excerpt}
-          </p>
-        </div>
-      ),
-    },
-    {
-      header: "Author & Date",
-      cell: (a: AdminArticle) => (
-        <div className="text-[12.5px] space-y-0.5">
-          <div className="font-medium text-[#12201B]">{a.author}</div>
-          <div className="text-[#5D6B65]">{a.date}</div>
-        </div>
-      ),
-    },
-    {
-      header: "Status",
-      cell: (a: AdminArticle) => <StatusPill status={a.status} />,
-    },
-    {
-      header: "Actions",
-      align: "right" as const,
-      cell: (a: AdminArticle) => (
-        <div className="flex items-center justify-end gap-1.5 relative">
-          <Link
-            href={`/blog/${a.slug}`}
-            target="_blank"
-            className="p-1.5 rounded-[8px] text-[#5D6B65] hover:text-[#0F6B54] hover:bg-[#F1F4F2] transition-colors"
-            title="View article on website"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </Link>
+  const handleOpenEdit = (art: AdminArticle) => {
+    setEditingArticle(art);
+    setTitle(art.title);
+    setExcerpt(art.excerpt || "");
+    setCategory(art.category);
+    setAuthor(art.author);
+    setStatus(art.status);
+  };
 
-          <button
-            type="button"
-            onClick={() => setActiveMenuId(activeMenuId === a.id ? null : a.id)}
-            className="p-1.5 rounded-[8px] text-[#5D6B65] hover:text-[#12201B] hover:bg-[#F1F4F2] transition-colors"
-            aria-label="More options"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+  const handleSaveAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onCreateArticle({
+      title: title.trim(),
+      excerpt: excerpt.trim(),
+      category,
+      author: author.trim() || "Plan C Crew",
+      status,
+      slug: title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+    });
+    setShowAddModal(false);
+  };
 
-          {activeMenuId === a.id && (
-            <div className="absolute right-0 top-8 w-36 rounded-[10px] bg-white border border-[#E3E8E5] shadow-lg z-20 py-1 text-[12.5px]">
-              <button
-                type="button"
-                onClick={() => {
-                  onDuplicateArticle(a.id);
-                  setActiveMenuId(null);
-                }}
-                className="w-full text-left px-3 py-1.5 hover:bg-[#F1F4F2] flex items-center gap-2 text-[#12201B]"
-              >
-                <Copy className="w-3.5 h-3.5" />
-                <span>Duplicate</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveMenuId(null);
-                  setDeleteId(a.id);
-                }}
-                className="w-full text-left px-3 py-1.5 hover:bg-[#DC2626]/10 flex items-center gap-2 text-[#DC2626]"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
-              </button>
-            </div>
-          )}
-        </div>
-      ),
-    },
-  ];
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingArticle || !title.trim()) return;
+    onUpdateArticle(editingArticle.id, {
+      title: title.trim(),
+      excerpt: excerpt.trim(),
+      category,
+      author: author.trim() || "Plan C Crew",
+      status,
+    });
+    setEditingArticle(null);
+  };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      <PageHeader
-        title="Articles and blog"
-        subtitle="Manage cleaning guides and termite defense tips for Kerala residents"
-        actions={
-          <button
-            type="button"
-            onClick={() => setShowNewModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-[10px] bg-[#0F6B54] hover:bg-[#0c5543] text-white text-[13px] font-medium transition-colors cursor-pointer shadow-xs"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New article</span>
-          </button>
-        }
-      />
-
-      {/* Toolbar */}
-      <Toolbar
-        searchValue={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search articles by title, excerpt, or author..."
-        filters={
-          <div className="flex items-center gap-1 bg-[#F1F4F2] p-1 rounded-[10px] border border-[#E3E8E5]">
-            {(["All", "Published", "Draft"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => {
-                  setStatusFilter(s);
-                  setPage(1);
-                }}
-                className={`px-3 py-1 rounded-[8px] text-[12.5px] font-medium transition-colors cursor-pointer ${
-                  statusFilter === s
-                    ? "bg-white text-[#12201B] font-semibold shadow-xs"
-                    : "text-[#5D6B65] hover:text-[#12201B]"
-                }`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        }
-      />
-
-      {/* Data Table */}
-      <DataTable
-        columns={columns}
-        data={paginatedArticles}
-        totalItems={filteredArticles.length}
-        currentPage={page}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        emptyTitle="No articles found"
-        emptyDescription="No articles match your search or status criteria."
-      />
-
-      {/* New Article Modal */}
-      {showNewModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+    <div className="space-y-6 font-sans animate-in fade-in duration-200">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-[26px] md:text-[28px] font-bold text-[#0F1535] tracking-tight">Articles & Blog</h1>
+          <p className="text-[14px] text-[#6B7280] mt-0.5">
+            Publish educational content, cleaning tips, and service announcements
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenAdd}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-[10px] bg-[#12B76A] hover:bg-[#0EA05C] text-white text-[14px] font-semibold shadow-xs hover:shadow-md transition-all cursor-pointer"
         >
-          <div className="bg-white border border-[#E3E8E5] rounded-[14px] p-6 max-w-lg w-full shadow-2xl space-y-4">
-            <h2 className="text-[17px] font-bold text-[#12201B]">
-              New article
-            </h2>
+          <Plus className="w-4 h-4" />
+          <span>New Article</span>
+        </button>
+      </div>
 
-            <form onSubmit={handleCreate} className="space-y-4 text-[13.5px]">
+      {/* Main Card */}
+      <div className="bg-white border border-[#EEF0F6] rounded-[20px] p-6 shadow-[0_4px_24px_rgba(91,91,240,0.06)] space-y-5">
+        {/* Search */}
+        <div className="relative max-w-sm w-full">
+          <Search className="w-4 h-4 text-[#6B7280] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Search articles by title, category, author..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-4 py-2.5 rounded-xl bg-[#F6F7FD] border border-[#EEF0F6] text-[13px] text-[#0F1535] placeholder:text-[#9CA3AF] outline-none focus:border-[#5B5BF0] focus:bg-white focus:ring-2 focus:ring-[#5B5BF0]/10 transition-all w-full"
+          />
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto rounded-xl border border-[#EEF0F6]">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="bg-[#F8F9FC] text-[#6B7280] text-[12.5px] font-semibold border-b border-[#EEF0F6]">
+                <th className="py-3.5 px-4 font-semibold">Title</th>
+                <th className="py-3.5 px-4 font-semibold">Category</th>
+                <th className="py-3.5 px-4 font-semibold">Author</th>
+                <th className="py-3.5 px-4 font-semibold">Date</th>
+                <th className="py-3.5 px-4 font-semibold">Status</th>
+                <th className="py-3.5 px-4 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#EEF0F6]">
+              {filtered.map((a) => (
+                <tr key={a.id} className="hover:bg-[#F6F7FD]/70 transition-colors">
+                  <td className="py-4 px-4 max-w-xs">
+                    <div className="font-semibold text-[14px] text-[#0F1535] line-clamp-1">{a.title}</div>
+                    {a.excerpt && (
+                      <p className="text-[12.5px] text-[#6B7280] line-clamp-1 mt-0.5">{a.excerpt}</p>
+                    )}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className="px-2.5 py-1 rounded-full bg-[#EEF0FF] text-[#5B5BF0] text-[12px] font-medium">
+                      {a.category}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-[#6B7280] text-[13px]">{a.author}</td>
+                  <td className="py-4 px-4 text-[#6B7280] text-[13px]">{a.date}</td>
+                  <td className="py-4 px-4">
+                    <button
+                      type="button"
+                      onClick={() => onToggleStatus(a.id)}
+                      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-semibold cursor-pointer transition-colors ${
+                        a.status === "Published"
+                          ? "bg-[#E7F8F0] text-[#12B76A] hover:bg-[#d6f5e6]"
+                          : "bg-[#F6F7FD] text-[#6B7280] hover:bg-[#EEF0F6]"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${a.status === "Published" ? "bg-[#12B76A]" : "bg-[#9CA3AF]"}`} />
+                      {a.status}
+                    </button>
+                  </td>
+                  <td className="py-4 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(a)}
+                        title="Edit"
+                        className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDuplicateArticle(a.id)}
+                        title="Duplicate"
+                        className="w-8 h-8 rounded-lg hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] inline-flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteId(a.id)}
+                        title="Delete"
+                        className="w-8 h-8 rounded-lg hover:bg-rose-50 text-[#6B7280] hover:text-rose-600 inline-flex items-center justify-center transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-[#6B7280] text-[14px]">
+                    No articles found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Article Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3">
+              <h2 className="text-[18px] font-bold text-[#0F1535]">New Article</h2>
+              <button type="button" onClick={() => setShowAddModal(false)} className="w-8 h-8 rounded-full bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] flex items-center justify-center transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveAdd} className="space-y-4">
               <div>
-                <label className="block text-[#5D6B65] mb-1 font-medium">Article title</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Monsoon Home Cleaning Checklist for Trivandrum"
-                  className="w-full px-3 py-2 rounded-[10px] bg-white border border-[#E3E8E5] text-[#12201B] focus:outline-none focus:ring-2 focus:ring-[#0F6B54]"
-                />
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Title *</label>
+                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Article title..." className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]" />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Excerpt / Summary</label>
+                <textarea rows={2} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} placeholder="Brief summary for the article listing..." className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535] resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-[#5D6B65] mb-1 font-medium">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as AdminArticle["category"])}
-                    className="w-full px-3 py-2 rounded-[10px] bg-white border border-[#E3E8E5] text-[#12201B] focus:outline-none focus:ring-2 focus:ring-[#0F6B54]"
-                  >
-                    <option value="Home cleaning">Home cleaning</option>
-                    <option value="Pest prevention">Pest prevention</option>
-                    <option value="Water hygiene">Water hygiene</option>
-                    <option value="Seasonal care">Seasonal care</option>
+                  <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Category</label>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]">
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-[#5D6B65] mb-1 font-medium">Author</label>
-                  <input
-                    type="text"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    className="w-full px-3 py-2 rounded-[10px] bg-white border border-[#E3E8E5] text-[#12201B] focus:outline-none focus:ring-2 focus:ring-[#0F6B54]"
-                  />
+                  <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Status</label>
+                  <select value={status} onChange={(e) => setStatus(e.target.value as "Published" | "Draft")} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]">
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                  </select>
                 </div>
               </div>
-
               <div>
-                <label className="block text-[#5D6B65] mb-1 font-medium">Excerpt</label>
-                <textarea
-                  rows={3}
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  placeholder="Short introductory summary for search previews..."
-                  className="w-full px-3 py-2 rounded-[10px] bg-white border border-[#E3E8E5] text-[#12201B] focus:outline-none focus:ring-2 focus:ring-[#0F6B54]"
-                />
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Author</label>
+                <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]" />
               </div>
-
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#E3E8E5]">
-                <button
-                  type="button"
-                  onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 rounded-[10px] border border-[#E3E8E5] text-[#12201B] hover:bg-[#F1F4F2] font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-[10px] bg-[#0F6B54] text-white font-medium hover:bg-[#0c5543]"
-                >
-                  Publish article
-                </button>
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#12B76A] hover:bg-[#0EA05C] text-white font-semibold cursor-pointer">Publish Article</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Delete Article Confirm Dialog */}
-      <ConfirmDialog
-        isOpen={Boolean(deleteId)}
-        title="Delete article"
-        description="Are you sure you want to delete this blog post? It will no longer appear on the website."
-        confirmLabel="Delete"
-        onConfirm={() => {
-          if (deleteId) onDeleteArticle(deleteId);
-          setDeleteId(null);
-        }}
-        onCancel={() => setDeleteId(null)}
-      />
+      {/* Edit Article Modal */}
+      {editingArticle && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 max-w-lg w-full shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-[#EEF0F6] pb-3">
+              <h2 className="text-[18px] font-bold text-[#0F1535]">Edit Article</h2>
+              <button type="button" onClick={() => setEditingArticle(null)} className="w-8 h-8 rounded-full bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] flex items-center justify-center transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="space-y-4">
+              <div>
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Title *</label>
+                <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Excerpt / Summary</label>
+                <textarea rows={2} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535] resize-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Category</label>
+                  <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]">
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Status</label>
+                  <select value={status} onChange={(e) => setStatus(e.target.value as "Published" | "Draft")} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]">
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-[13px] font-semibold text-[#0F1535] mb-1">Author</label>
+                <input type="text" value={author} onChange={(e) => setAuthor(e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl border border-[#EEF0F6] bg-[#F6F7FD] outline-none focus:bg-white focus:border-[#5B5BF0] text-[#0F1535]" />
+              </div>
+              <div className="flex justify-end gap-3 pt-3">
+                <button type="button" onClick={() => setEditingArticle(null)} className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-[#5B5BF0] hover:bg-[#4E4EE0] text-white font-semibold cursor-pointer">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-[#EEF0F6] rounded-[24px] p-6 max-w-sm w-full shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <h3 className="text-[17px] font-bold text-[#0F1535]">Delete Article?</h3>
+            <p className="text-[13.5px] text-[#6B7280]">This article will be permanently removed from the blog.</p>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => setDeleteId(null)} className="px-4 py-2 rounded-xl border border-[#EEF0F6] text-[#6B7280] font-semibold hover:bg-[#F6F7FD] cursor-pointer">Cancel</button>
+              <button type="button" onClick={() => { onDeleteArticle(deleteId); setDeleteId(null); }} className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

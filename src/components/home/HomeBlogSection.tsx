@@ -45,6 +45,7 @@ export default function HomeBlogSection({ posts }: { posts: BlogPost[] }) {
                   src={post.cover_image}
                   alt={post.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                 />
               </div>

@@ -191,7 +191,7 @@ export default function ContactForm({ services }: { services: Service[] }) {
               <input
                 type="text"
                 {...register("name")}
-                placeholder="e.g. Anand Krishnan"
+                placeholder="e.g. Your full name"
                 className={`w-full px-4 py-3.5 rounded-2xl bg-slate-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 ${
                   errors.name
                     ? "border-red-400 focus:border-red-500"
@@ -212,7 +212,7 @@ export default function ContactForm({ services }: { services: Service[] }) {
               <input
                 type="tel"
                 {...register("phone")}
-                placeholder="e.g. 7994342372"
+                placeholder="e.g. 9876543210"
                 className={`w-full px-4 py-3.5 rounded-2xl bg-slate-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 ${
                   errors.phone
                     ? "border-red-400 focus:border-red-500"
@@ -236,7 +236,7 @@ export default function ContactForm({ services }: { services: Service[] }) {
               <input
                 type="email"
                 {...register("email")}
-                placeholder="anand@example.com"
+                placeholder="you@example.com"
                 className={`w-full px-4 py-3.5 rounded-2xl bg-slate-50 border text-sm focus:outline-none focus:ring-2 focus:ring-brand-600/20 ${
                   errors.email
                     ? "border-red-400 focus:border-red-500"

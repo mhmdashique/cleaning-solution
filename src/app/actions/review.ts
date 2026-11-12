@@ -28,7 +28,8 @@ export async function submitReviewAction(formData: FormData) {
     });
 
     revalidatePath("/reviews");
-    revalidatePath("/admin/reviews");
+    revalidatePath("/admin");
+    revalidatePath("/");
 
     return { 
       success: true, 

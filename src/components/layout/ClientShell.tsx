@@ -50,13 +50,22 @@ function Navbar() {
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
+  const isHome = pathname === "/";
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-xs border-b border-slate-100"
-          : "bg-white/90 backdrop-blur-sm border-b border-slate-100"
+      className={`z-50 transition-all duration-300 ${
+        isHome
+          ? `fixed inset-x-0 top-0 ${
+              scrolled
+                ? "border-b border-slate-100 bg-white/95 shadow-xs backdrop-blur-md"
+                : "border-b border-transparent bg-transparent"
+            }`
+          : `sticky top-0 ${
+              scrolled
+                ? "border-b border-slate-100 bg-white/95 shadow-xs backdrop-blur-md"
+                : "border-b border-slate-100 bg-white/90 backdrop-blur-sm"
+            }`
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -80,11 +89,22 @@ function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links with Green Underline on Active */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav
+            className={`hidden items-center lg:flex ${
+              isHome
+                ? "gap-1 rounded-full border border-white/70 bg-white/70 p-1.5 shadow-sm backdrop-blur-md"
+                : "gap-8"
+            }`}
+          >
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
-                <div key={link.name} className="relative py-2">
+                <div
+                  key={link.name}
+                  className={`relative ${isHome ? "rounded-full px-4 py-2.5" : "py-2"} ${
+                    isHome && isActive ? "bg-white shadow-sm" : ""
+                  }`}
+                >
                   <Link
                     href={link.href}
                     className={`text-sm font-semibold transition-colors duration-150 ${
@@ -95,8 +115,11 @@ function Navbar() {
                   >
                     {link.name}
                   </Link>
-                  {isActive && (
+                  {isActive && !isHome && (
                     <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 rounded-full" />
+                  )}
+                  {isActive && isHome && (
+                    <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full bg-brand-600" />
                   )}
                 </div>
               );
@@ -104,11 +127,13 @@ function Navbar() {
           </nav>
 
           {/* Right Action Cluster — Track Booking + Book Now */}
-          <div className="hidden items-center gap-6 sm:flex">
+          <div className="hidden items-center gap-3 sm:flex">
             {/* Track Booking shortcut */}
             <Link
               href="/track"
-              className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 transition-colors hover:text-brand-700"
+              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:text-brand-700 ${
+                isHome ? "bg-white/80 shadow-sm backdrop-blur-sm" : ""
+              }`}
             >
               <Compass className="w-4 h-4 text-brand-600" />
               <span>Track Booking</span>
@@ -117,11 +142,17 @@ function Navbar() {
             {/* Book Now — Outline pill with Calendar icon & arrow */}
             <Link
               href="/contact"
-              className="inline-flex items-center gap-2 rounded-full border border-brand-600/90 bg-white px-5 py-2 text-xs font-bold text-brand-700 shadow-2xs transition-all hover:bg-brand-50 active:scale-[0.98] sm:text-sm"
+              className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold transition-all active:scale-[0.98] sm:text-sm ${
+                isHome
+                  ? "bg-gradient-to-r from-brand-600 to-brand-700 text-white shadow-sm hover:from-brand-700 hover:to-brand-800"
+                  : "border border-brand-600/90 bg-white text-brand-700 shadow-2xs hover:bg-brand-50"
+              }`}
             >
-              <Calendar className="w-4 h-4 text-brand-600" />
+              <Calendar
+                className={`w-4 h-4 ${isHome ? "text-white" : "text-brand-600"}`}
+              />
               <span>Book Now</span>
-              <span className="text-brand-600">→</span>
+              <span className={isHome ? "text-white" : "text-brand-600"}>→</span>
             </Link>
           </div>
 
@@ -198,8 +229,14 @@ function Navbar() {
 // ─────────────────────────────────────────────────────────────────────────────
 // FOOTER
 // ─────────────────────────────────────────────────────────────────────────────
-function Footer() {
+interface FooterService {
+  title: string;
+  slug: string;
+}
+
+function Footer({ services }: { services: FooterService[] }) {
   const currentYear = new Date().getFullYear();
+  const featuredServices = services.slice(0, 8);
 
   return (
     <footer className="bg-slate-950 text-slate-300 pt-16 pb-12 border-t border-slate-900">
@@ -273,25 +310,27 @@ function Footer() {
               Core Services
             </h3>
             <ul className="space-y-2.5">
-              {[
-                "Full House Deep Cleaning",
-                "Kitchen Deep Cleaning",
-                "Bathroom Steam Cleaning",
-                "Water Tank Cleaning",
-                "Sofa & Mattress Shampooing",
-                "Anti-Termite Control",
-                "Cockroach Control",
-                "Post-Construction Cleaning",
-              ].map((s) => (
-                <li key={s}>
+              {featuredServices.length > 0 ? (
+                featuredServices.map((s) => (
+                  <li key={s.slug}>
+                    <Link
+                      href={`/services/${s.slug}`}
+                      className="text-sm text-slate-400 hover:text-white transition-colors"
+                    >
+                      {s.title}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <li>
                   <Link
                     href="/services"
                     className="text-sm text-slate-400 hover:text-white transition-colors"
                   >
-                    {s}
+                    Browse all services
                   </Link>
                 </li>
-              ))}
+              )}
             </ul>
           </div>
 
@@ -441,12 +480,16 @@ export function NavbarShell() {
   return <Navbar />;
 }
 
-export function FooterShell() {
+export function FooterShell({
+  services = [],
+}: {
+  services?: FooterService[];
+}) {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) return null;
   return (
     <>
-      <Footer />
+      <Footer services={services} />
       <FloatingActions />
     </>
   );
