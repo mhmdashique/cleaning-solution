@@ -7,12 +7,13 @@ import { ArrowRight, CalendarDays } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative isolate flex min-h-[780px] items-center justify-center overflow-hidden bg-slate-100 pt-24 pb-28 sm:min-h-[860px] sm:pt-28 lg:min-h-[min(960px,110svh)]">
+    <section className="relative isolate flex min-h-[780px] items-center justify-center overflow-hidden bg-slate-100 pt-24 pb-28 sm:min-h-[860px] sm:pt-28 lg:min-h-[min(960px,110svh)] contain-layout">
       <Image
         src="/images/landingpage.jpg"
         alt="Professional cleaner caring for a bright, comfortable home"
         fill
         priority
+        fetchPriority="high"
         sizes="100vw"
         className="object-cover object-[62%_center]"
       />

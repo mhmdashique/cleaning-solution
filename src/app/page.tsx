@@ -17,39 +17,23 @@ import { SectionSkeleton } from "@/components/ui/Skeleton";
 
 export const revalidate = 60; // ISR every 60 seconds
 
-async function ServicesSectionData() {
-  const services = await getServices();
-  return <ServicesSection services={services} />;
-}
+export default async function HomePage() {
+  const [services, reviews, posts] = await Promise.all([
+    getServices(),
+    getApprovedReviews(),
+    getPublishedBlogPosts(),
+  ]);
 
-async function TestimonialsSectionData() {
-  const reviews = await getApprovedReviews();
-  return <HomeTestimonials reviews={reviews} />;
-}
-
-async function BlogSectionData() {
-  const posts = await getPublishedBlogPosts();
-  return <HomeBlogSection posts={posts} />;
-}
-
-async function ContactSectionData() {
-  const services = await getServices();
-  return <ContactSection services={services} />;
-}
-
-export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* 1. Hero with Framer Motion animations & cleaner cutout visual - renders immediately */}
+      {/* 1. Hero with cleaner cutout visual - eager loaded with high priority */}
       <Hero />
 
       {/* 2. Trust Feature Strip overlapping hero bottom */}
       <FeatureStrip />
 
-      {/* 3. Services Section - streamed with skeleton for faster LCP */}
-      <Suspense fallback={<SectionSkeleton label="Loading services..." />}>
-        <ServicesSectionData />
-      </Suspense>
+      {/* 3. Services Section - server-rendered directly to eliminate CLS */}
+      <ServicesSection services={services} />
 
       {/* 4. Customer Segments */}
       <SegmentCards />
@@ -61,19 +45,13 @@ export default function HomePage() {
       <HowItWorks />
 
       {/* 7. Client Feedback & Ratings */}
-      <Suspense fallback={<SectionSkeleton label="Loading reviews..." />}>
-        <TestimonialsSectionData />
-      </Suspense>
+      <HomeTestimonials reviews={reviews} />
 
       {/* 8. Field Knowledge & Blog Guides */}
-      <Suspense fallback={<SectionSkeleton label="Loading articles..." />}>
-        <BlogSectionData />
-      </Suspense>
+      <HomeBlogSection posts={posts} />
 
       {/* 9. Contact & Booking */}
-      <Suspense fallback={<SectionSkeleton label="Loading contact section..." />}>
-        <ContactSectionData />
-      </Suspense>
+      <ContactSection services={services} />
     </div>
   );
 }

@@ -98,12 +98,17 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Plus Jakarta Sans — loaded from CDN at runtime (avoids build-time network requirement) */}
+        {/* Plus Jakarta Sans — loaded with font-display: swap to prevent layout shifts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         />
         <link
           href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
