@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { UploadCloud, Building2, Sliders, Bell, Share2, Shield, CreditCard, RotateCcw, Check } from "lucide-react";
+import { UploadCloud, Building2, Sliders, Bell, Share2, Shield, CreditCard, RotateCcw } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 import { updateSiteSettingsAdminAction } from "@/app/actions/admin";
 
 export default function SettingsView() {
-  const { settings, updateSettings, resetAllData } = useOpsHub();
+  const { settings, updateSettings, resetAllData, showToast } = useOpsHub();
   const [activeMenu, setActiveMenu] = useState("profile");
-  const [saved, setSaved] = useState(false);
 
   const [form, setForm] = useState({
     businessName: settings.businessName || "PLAN C Cleaning Solutions",
@@ -31,26 +30,33 @@ export default function SettingsView() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings(form);
+    if (!form.businessName.trim() || !form.phone.trim() || !form.email.trim()) {
+      showToast("Business name, phone, and email are required.", "warning");
+      return;
+    }
     try {
-      await updateSiteSettingsAdminAction({
+      const result = await updateSiteSettingsAdminAction({
         company_name: form.businessName,
         phone: form.phone.replace(/[^0-9]/g, ""),
         phone_display: form.phone,
         email: form.email,
         address: form.address,
       });
+      if (!result.success) {
+        showToast(result.error || "Could not save settings.", "error");
+        return;
+      }
+      updateSettings(form);
+      showToast("Settings saved successfully.");
     } catch (err) {
       console.error("Could not sync to server site settings", err);
+      showToast("Could not save settings. Please try again.", "error");
     }
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   };
 
   const handleReset = () => {
     if (confirm("Reset all operations data to initial seed records? This will clear any local edits.")) {
       resetAllData();
-      alert("All operations data has been reset to initial seed data.");
     }
   };
 
@@ -63,12 +69,6 @@ export default function SettingsView() {
           <p className="text-[14px] text-[#6B7280] mt-0.5">Manage business profile, team preferences and operational configurations</p>
         </div>
 
-        {saved && (
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E7F8F0] text-[#12B76A] text-[13px] font-bold animate-in fade-in">
-            <Check className="w-4 h-4" />
-            <span>Settings saved successfully!</span>
-          </div>
-        )}
       </div>
 
       {/* Two Column Layout */}

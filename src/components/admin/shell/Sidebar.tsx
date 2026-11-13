@@ -13,8 +13,6 @@ import {
   FileText,
   MessageSquare,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -22,7 +20,6 @@ interface SidebarProps {
   onTabChange: (tab: string) => void;
   onLogout?: () => void;
   isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
 }
 
 interface NavItem {
@@ -50,7 +47,6 @@ export default function Sidebar({
   onTabChange,
   onLogout,
   isCollapsed = false,
-  onToggleCollapse,
 }: SidebarProps) {
   return (
     <>
@@ -85,24 +81,6 @@ export default function Sidebar({
               )}
             </div>
 
-            {/* Sidebar Minimize / Expand Toggle Button with Panel Icon */}
-            {onToggleCollapse && (
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                title={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
-                aria-label={isCollapsed ? "Expand sidebar" : "Minimize sidebar"}
-                className={`w-8 h-8 rounded-xl bg-[#F6F7FD] hover:bg-[#EEF0FF] text-[#6B7280] hover:text-[#5B5BF0] border border-[#EEF0F6] flex items-center justify-center transition-all cursor-pointer shrink-0 shadow-2xs ${
-                  isCollapsed ? "mt-2" : ""
-                }`}
-              >
-                {isCollapsed ? (
-                  <PanelLeftOpen className="w-4 h-4" />
-                ) : (
-                  <PanelLeftClose className="w-4 h-4" />
-                )}
-              </button>
-            )}
           </div>
 
           {/* Navigation Items */}

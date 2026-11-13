@@ -68,7 +68,6 @@ export default function AppShell({
         onTabChange={onTabChange}
         onLogout={onLogout}
         isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleToggleSidebar}
       />
 
       {/* Main content area */}

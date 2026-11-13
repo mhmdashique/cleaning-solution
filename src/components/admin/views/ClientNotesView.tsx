@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { MessageSquare, Search, Check, CheckCheck, Plus, X, Phone } from "lucide-react";
 import { AdminClientNote } from "@/types/admin";
+import { useOpsHub } from "@/context/OpsHubContext";
 
 interface ClientNotesViewProps {
   notes: AdminClientNote[];
@@ -17,6 +18,7 @@ export default function ClientNotesView({
   onOpenBooking,
   onAddNote,
 }: ClientNotesViewProps) {
+  const { showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [filterHandled, setFilterHandled] = useState<"All" | "Open" | "Done">("All");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -47,7 +49,10 @@ export default function ClientNotesView({
 
   const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNote.trim() || !newCustomerName.trim()) return;
+    if (!newNote.trim() || !newCustomerName.trim()) {
+      showToast("Customer name and note are required.", "warning");
+      return;
+    }
     onAddNote?.({
       bookingId: `bk-${Date.now()}`,
       bookingCode: newBookingCode.trim() || `PC-${Math.floor(Math.random() * 9000) + 1000}`,

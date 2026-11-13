@@ -30,6 +30,9 @@ export interface Booking {
   service_name: string;
   address: string;
   preferred_date?: string;
+  reschedule_requested_date?: string | null;
+  reschedule_reason?: string | null;
+  reschedule_requested_at?: string | null;
   message?: string;
   status: BookingStatus;
   amount?: number | null;

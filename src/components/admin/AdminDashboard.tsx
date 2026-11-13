@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Booking, Service, Review, BlogPost } from "@/types";
 import {
   logoutAdminAction,
@@ -16,7 +17,6 @@ import {
 import { OpsHubProvider, useOpsHub } from "@/context/OpsHubContext";
 
 import AppShell from "./shell/AppShell";
-import Toast, { ToastMessage } from "./shared/Toast";
 import OverviewView from "./views/OverviewView";
 import BookingsView from "./views/BookingsView";
 import BookingDetailView from "./views/BookingDetailView";
@@ -62,7 +62,8 @@ function AdminDashboardContent({
   blogPosts: dbArticles,
   clientNoteStates = {},
 }: AdminDashboardProps) {
-  const { bookings: opsBookings, services: opsServices } = useOpsHub();
+  const router = useRouter();
+  const { bookings: opsBookings, services: opsServices, showToast } = useOpsHub();
 
   // Persist active tab + selected IDs across page reloads via sessionStorage
   const [activeTab, setActiveTab] = useState<string>(() => {
@@ -83,8 +84,6 @@ function AdminDashboardContent({
     }
     return null;
   });
-  const [toast, setToast] = useState<ToastMessage | null>(null);
-
   // Keep sessionStorage in sync whenever tab/selection changes
   const handleTabChange = (tab: string) => {
     sessionStorage.setItem("planc_admin_tab", tab);
@@ -98,6 +97,9 @@ function AdminDashboardContent({
       setSelectedCustomerId(null);
     }
     setActiveTab(tab);
+    if (tab === "notifications") {
+      router.refresh();
+    }
   };
 
   const handleSelectBooking = (id: string) => {
@@ -232,10 +234,6 @@ function AdminDashboardContent({
           <AddBookingView
             onBack={() => handleTabChange("bookings")}
             onSuccess={() => {
-              setToast({
-                id: `toast-${Date.now()}`,
-                text: "Booking created successfully and dispatched to staff!",
-              });
               handleTabChange("bookings");
             }}
           />
@@ -273,31 +271,46 @@ function AdminDashboardContent({
               setReviews((prev) =>
                 prev.map((r) => (r.id === id ? { ...r, status: "Approved" } : r))
               );
-              setToast({ id: `toast-${Date.now()}`, text: "Review approved and published to website." });
               try {
-                await toggleReviewApprovalAction(id, true);
+                const result = await toggleReviewApprovalAction(id, true);
+                if (!result.success) {
+                  showToast(result.error || "Could not approve the review.", "error");
+                  return;
+                }
+                showToast("Review approved and published to website.");
               } catch (e) {
                 console.error("Failed to approve review on server", e);
+                showToast("Could not approve the review. Please try again.", "error");
               }
             }}
             onHide={async (id) => {
               setReviews((prev) =>
                 prev.map((r) => (r.id === id ? { ...r, status: "Hidden" } : r))
               );
-              setToast({ id: `toast-${Date.now()}`, text: "Review hidden from website." });
               try {
-                await toggleReviewApprovalAction(id, false);
+                const result = await toggleReviewApprovalAction(id, false);
+                if (!result.success) {
+                  showToast(result.error || "Could not hide the review.", "error");
+                  return;
+                }
+                showToast("Review hidden from website.");
               } catch (e) {
                 console.error("Failed to hide review on server", e);
+                showToast("Could not hide the review. Please try again.", "error");
               }
             }}
             onDeleteReview={async (id) => {
               setReviews((prev) => prev.filter((r) => r.id !== id));
-              setToast({ id: `toast-${Date.now()}`, text: "Review removed permanently." });
               try {
-                await deleteReviewAdminAction(id);
+                const result = await deleteReviewAdminAction(id);
+                if (!result.success) {
+                  showToast(result.error || "Could not delete the review.", "error");
+                  return;
+                }
+                showToast("Review removed permanently.");
               } catch (e) {
                 console.error("Failed to delete review on server", e);
+                showToast("Could not delete the review. Please try again.", "error");
               }
             }}
             onBulkAction={async (ids, action) => {
@@ -316,18 +329,21 @@ function AdminDashboardContent({
                     : r
                 )
               );
-              setToast({
-                id: `toast-${Date.now()}`,
-                text: `${ids.length} reviews updated.`,
-              });
               try {
                 for (const rId of ids) {
-                  if (action === "approve") await toggleReviewApprovalAction(rId, true);
-                  else if (action === "hide") await toggleReviewApprovalAction(rId, false);
-                  else if (action === "delete") await deleteReviewAdminAction(rId);
+                  let result: { success: boolean; error?: string };
+                  if (action === "approve") result = await toggleReviewApprovalAction(rId, true);
+                  else if (action === "hide") result = await toggleReviewApprovalAction(rId, false);
+                  else result = await deleteReviewAdminAction(rId);
+                  if (!result.success) {
+                    showToast(result.error || "Some reviews could not be updated.", "error");
+                    return;
+                  }
                 }
+                showToast(`${ids.length} reviews updated.`);
               } catch (e) {
                 console.error("Failed bulk action", e);
+                showToast("Could not complete the review update. Please try again.", "error");
               }
             }}
           />
@@ -348,9 +364,8 @@ function AdminDashboardContent({
                 status: (newArt.status as "Published" | "Draft") || "Published",
               };
               setArticles((prev) => [fullArt, ...prev]);
-              setToast({ id: `toast-${Date.now()}`, text: "Article created and saved." });
               try {
-                await saveBlogPostAdminAction({
+                const result = await saveBlogPostAdminAction({
                   title: newArt.title || "Untitled article",
                   slug: newArt.slug || "",
                   excerpt: newArt.excerpt || "",
@@ -359,19 +374,24 @@ function AdminDashboardContent({
                   author: newArt.author || "Plan C Crew",
                   status: (newArt.status as "Published" | "Draft") || "Published",
                 });
+                if (!result.success) {
+                  showToast(result.error || "Could not save the article.", "error");
+                  return;
+                }
+                showToast("Article created and saved.");
               } catch (e) {
                 console.error("Failed to create article on server", e);
+                showToast("Could not save the article. Please try again.", "error");
               }
             }}
             onUpdateArticle={async (id, patch) => {
               setArticles((prev) =>
                 prev.map((a) => (a.id === id ? { ...a, ...patch } : a))
               );
-              setToast({ id: `toast-${Date.now()}`, text: "Article updated." });
               try {
                 const target = articles.find((a) => a.id === id);
                 if (target) {
-                  await updateBlogPostAdminAction(id, {
+                  const result = await updateBlogPostAdminAction(id, {
                     title: patch.title ?? target.title,
                     slug: patch.slug ?? target.slug,
                     excerpt: patch.excerpt ?? target.excerpt,
@@ -380,9 +400,15 @@ function AdminDashboardContent({
                     author: patch.author ?? target.author,
                     status: (patch.status ?? target.status) as "Published" | "Draft",
                   });
+                  if (!result.success) {
+                    showToast(result.error || "Could not update the article.", "error");
+                    return;
+                  }
+                  showToast("Article updated.");
                 }
               } catch (e) {
                 console.error("Failed to update article on server", e);
+                showToast("Could not update the article. Please try again.", "error");
               }
             }}
             onDuplicateArticle={async (id) => {
@@ -396,14 +422,16 @@ function AdminDashboardContent({
                 status: "Draft",
               };
               setArticles((prev) => [duplicated, ...prev]);
-              setToast({
-                id: `toast-${Date.now()}`,
-                text: "Article duplicated as draft.",
-              });
               try {
-                await duplicateBlogPostAdminAction(id);
+                const result = await duplicateBlogPostAdminAction(id);
+                if (!result.success) {
+                  showToast(result.error || "Could not duplicate the article.", "error");
+                  return;
+                }
+                showToast("Article duplicated as draft.");
               } catch (e) {
                 console.error("Failed to duplicate article on server", e);
+                showToast("Could not duplicate the article. Please try again.", "error");
               }
             }}
             onToggleStatus={async (id) => {
@@ -419,20 +447,30 @@ function AdminDashboardContent({
                     : a
                 )
               );
-              setToast({ id: `toast-${Date.now()}`, text: `Article set to ${nextStatus}.` });
               try {
-                await toggleBlogPostPublishedAdminAction(id, nextStatus === "Published");
+                const result = await toggleBlogPostPublishedAdminAction(id, nextStatus === "Published");
+                if (!result.success) {
+                  showToast(result.error || "Could not update article status.", "error");
+                  return;
+                }
+                showToast(`Article set to ${nextStatus}.`);
               } catch (e) {
                 console.error("Failed to toggle status on server", e);
+                showToast("Could not update article status. Please try again.", "error");
               }
             }}
             onDeleteArticle={async (id) => {
               setArticles((prev) => prev.filter((a) => a.id !== id));
-              setToast({ id: `toast-${Date.now()}`, text: "Article deleted." });
               try {
-                await deleteBlogPostAdminAction(id);
+                const result = await deleteBlogPostAdminAction(id);
+                if (!result.success) {
+                  showToast(result.error || "Could not delete the article.", "error");
+                  return;
+                }
+                showToast("Article deleted.");
               } catch (e) {
                 console.error("Failed to delete article on server", e);
+                showToast("Could not delete the article. Please try again.", "error");
               }
             }}
           />
@@ -449,9 +487,15 @@ function AdminDashboardContent({
               );
               try {
                 const bookingCode = target?.bookingCode || id;
-                await setClientNoteHandledAdminAction(bookingCode, nextHandled);
+                const result = await setClientNoteHandledAdminAction(bookingCode, nextHandled);
+                if (!result.success) {
+                  showToast(result.error || "Could not update the note.", "error");
+                  return;
+                }
+                showToast(nextHandled ? "Client note marked as handled." : "Client note reopened.");
               } catch (e) {
                 console.error("Failed to update client note status", e);
+                showToast("Could not update client note. Please try again.", "error");
               }
             }}
             onOpenBooking={() => {
@@ -462,13 +506,12 @@ function AdminDashboardContent({
                 { ...newNote, id: `note-${Date.now()}` },
                 ...prev,
               ]);
+              showToast("Client note added.");
             }}
           />
         )}
       </AppShell>
 
-      {/* Global Toast */}
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
     </>
   );
 }

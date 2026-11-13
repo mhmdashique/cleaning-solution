@@ -84,11 +84,18 @@ export default function TrackClient() {
       const res = await requestRescheduleAction(
         booking.booking_code,
         rescheduleDate,
-        rescheduleReason
+        rescheduleReason,
+        booking.phone
       );
       if (res.success) {
         setActionMessage(res.message || "Reschedule requested!");
         setShowReschedule(false);
+        setBooking({
+          ...booking,
+          reschedule_requested_date: rescheduleDate,
+          reschedule_reason: rescheduleReason.trim() || null,
+          reschedule_requested_at: new Date().toISOString(),
+        });
       }
     });
   };

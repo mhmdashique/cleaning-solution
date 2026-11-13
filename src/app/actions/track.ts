@@ -1,6 +1,10 @@
 "use server";
 
-import { getBookingByCodeAndPhone, updateBookingStatus } from "@/lib/data/store";
+import {
+  getBookingByCodeAndPhone,
+  saveBookingRescheduleRequest,
+  updateBookingStatus,
+} from "@/lib/data/store";
 import { BookingStatus } from "@/types";
 import { revalidatePath } from "next/cache";
 
@@ -30,23 +34,50 @@ export async function trackBookingAction(code: string, phone: string) {
 export async function requestRescheduleAction(
   bookingCode: string,
   newDate: string,
-  reason: string
+  reason: string,
+  phone: string
 ) {
   try {
-    // In our system, note the reschedule request in admin notes or status
-    await updateBookingStatus(
-      bookingCode,
-      "Pending" as BookingStatus,
-      `Reschedule requested to ${newDate}. Note: ${reason}`
+    const normalizedCode = bookingCode.trim();
+    const normalizedReason = reason.trim();
+    const parsedDate = new Date(`${newDate}T00:00:00.000Z`);
+    if (
+      !normalizedCode ||
+      !phone.trim() ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(newDate) ||
+      Number.isNaN(parsedDate.getTime()) ||
+      parsedDate.toISOString().slice(0, 10) !== newDate ||
+      normalizedReason.length > 500
+    ) {
+      return { success: false, error: "Please enter a valid date and a reason under 500 characters." };
+    }
+
+    const booking = await getBookingByCodeAndPhone(normalizedCode, phone);
+    if (!booking) {
+      return { success: false, error: "Booking not found. Please check your booking ID and phone number." };
+    }
+    if (booking.status === "Completed" || booking.status === "Cancelled") {
+      return { success: false, error: "This booking can no longer be rescheduled." };
+    }
+
+    const saved = await saveBookingRescheduleRequest(
+      normalizedCode,
+      newDate,
+      normalizedReason
     );
+    if (!saved) {
+      return { success: false, error: "Booking not found. Please check your booking ID and try again." };
+    }
+
     revalidatePath("/track");
     revalidatePath("/admin");
     return {
       success: true,
       message: "Reschedule request received. Our coordinator will call you to confirm the new slot.",
     };
-  } catch {
-    return { success: false, error: "Unable to process reschedule request." };
+  } catch (error) {
+    console.error("Unable to save customer reschedule request", error);
+    return { success: false, error: "Unable to process reschedule request. Please try again later." };
   }
 }
 
@@ -67,4 +98,3 @@ export async function cancelBookingAction(bookingCode: string, reason: string) {
     return { success: false, error: "Unable to cancel booking." };
   }
 }
-

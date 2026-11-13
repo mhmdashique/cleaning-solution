@@ -65,6 +65,22 @@ export default function BookingsView({
     }
   };
 
+  const getStatusSelectColor = (status: BookingStatusType) => {
+    switch (status) {
+      case "Completed":
+      case "Confirmed":
+        return "bg-[#E7F8F0] text-[#12B76A] border-[#A6F4C5]";
+      case "In Progress":
+        return "bg-[#EFF8FF] text-[#3B82F6] border-[#B2DDFF]";
+      case "Pending":
+        return "bg-[#FFF4E5] text-[#F79009] border-[#FDDCAB]";
+      case "Cancelled":
+        return "bg-[#FEE4E2] text-[#F04438] border-[#FECDCA]";
+      default:
+        return "bg-[#F6F7FD] text-[#0F1535] border-[#EEF0F6]";
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200 font-sans">
       {/* Page Header */}
@@ -184,7 +200,7 @@ export default function BookingsView({
                           onChange={(e) => {
                             updateBookingStatus(b.id, e.target.value as BookingStatusType);
                           }}
-                          className="px-2.5 py-1 rounded-full text-[12px] font-semibold border border-transparent outline-none cursor-pointer bg-[#F6F7FD] text-[#0F1535] focus:border-[#5B5BF0]"
+                          className={`px-2.5 py-1 rounded-full text-[12px] font-semibold border outline-none cursor-pointer transition-colors focus:border-[#5B5BF0] ${getStatusSelectColor(b.status)}`}
                         >
                           <option value="Confirmed">Confirmed</option>
                           <option value="In Progress">In Progress</option>

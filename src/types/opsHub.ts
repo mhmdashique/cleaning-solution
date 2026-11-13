@@ -4,7 +4,7 @@ export type BookingStatusType = "Pending" | "Confirmed" | "In Progress" | "Compl
 export type PaymentMethodType = "Cash" | "UPI" | "Card" | "Bank";
 export type PaymentStatusType = "Paid" | "Pending" | "Refunded";
 export type StaffRoleType = "Manager" | "Support" | "Technician" | "Cleaner";
-export type NotificationType = "booking" | "payment" | "customer" | "appointment" | "service";
+export type NotificationType = "booking" | "payment" | "customer" | "appointment" | "service" | "reschedule";
 
 export interface Customer {
   id: string; // C-001
@@ -62,6 +62,9 @@ export interface BookingRecord {
   advancePaid?: number;
   extraCharges?: ExtraCharge[];
   notes?: string;
+  rescheduleRequestedDate?: string;
+  rescheduleReason?: string;
+  rescheduleRequestedAt?: string;
   createdAt: string;
   statusHistory: StatusHistoryEntry[];
   // Extra fields for website bookings (looked up when no matching customer exists)
@@ -117,4 +120,3 @@ export interface BusinessSettings {
   inAppAlerts: boolean;
   twoFactorAuth: boolean;
 }
-

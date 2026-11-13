@@ -5,7 +5,7 @@ import { Download, Search, CheckCircle2, Clock } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 
 export default function PaymentsView() {
-  const { payments, customers, updatePaymentStatus } = useOpsHub();
+  const { payments, customers, updatePaymentStatus, showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -21,24 +21,30 @@ export default function PaymentsView() {
   const totalPending = payments.filter((p) => p.status === "Pending").reduce((sum, p) => sum + p.amount, 0);
 
   const handleExportCsv = () => {
-    const headers = ["Invoice ID", "Booking ID", "Customer", "Amount", "Method", "Status", "Date"];
-    const rows = filtered.map((p) => [
-      p.id,
-      p.bookingId,
-      `"${customers.find((c) => c.id === p.customerId)?.name || "Customer"}"`,
-      p.amount,
-      p.method,
-      p.status,
-      p.date,
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const encoded = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encoded);
-    link.setAttribute("download", `plan_c_invoices_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const headers = ["Invoice ID", "Booking ID", "Customer", "Amount", "Method", "Status", "Date"];
+      const rows = filtered.map((p) => [
+        p.id,
+        p.bookingId,
+        `"${customers.find((c) => c.id === p.customerId)?.name || "Customer"}"`,
+        p.amount,
+        p.method,
+        p.status,
+        p.date,
+      ]);
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      const encoded = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encoded);
+      link.setAttribute("download", `plan_c_invoices_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Payment report exported.");
+    } catch (error) {
+      console.error("Could not export payment report", error);
+      showToast("Could not export the payment report.", "error");
+    }
   };
 
   return (

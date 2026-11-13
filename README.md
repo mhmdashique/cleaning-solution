@@ -96,6 +96,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 4. Run the seed script located at `supabase/seed.sql` (Seeds all 24 services, 14 South Kerala reviews, 5 local blog guides, and sample bookings).
 5. For an existing database, run `supabase/migrations/20261104_add_booking_amount.sql` to enable admin-entered booking amounts.
 6. Run `supabase/migrations/20261104_add_booking_payment_status.sql` to enable persistent paid/unpaid status and invoice seals.
+7. For customer reschedule requests, run `supabase/migrations/20261113_add_reschedule_requests.sql` on existing databases.
 
 ### Step 4: Run the Development Server
 ```bash

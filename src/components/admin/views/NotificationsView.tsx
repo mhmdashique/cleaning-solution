@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, Calendar, CreditCard, UserPlus, Sparkles, Check, Trash2, Plus, X, Star, MessageSquare } from "lucide-react";
+import { Bell, Calendar, CreditCard, UserPlus, Sparkles, Check, Trash2, Plus, X, Star, MessageSquare, RefreshCw } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 
 export default function NotificationsView() {
-  const { notifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification } = useOpsHub();
+  const {
+    notifications,
+    addNotification,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification,
+  } = useOpsHub();
   const [tab, setTab] = useState<"All" | "Unread" | "Read">("All");
   const [showAddModal, setShowAddModal] = useState(false);
   const [newType, setNewType] = useState<"booking" | "payment" | "customer" | "service">("booking");
@@ -22,6 +28,8 @@ export default function NotificationsView() {
 
   const getIcon = (type: string) => {
     switch (type) {
+      case "reschedule":
+        return { icon: RefreshCw, bg: "bg-[#FFF0F9]", color: "text-[#DB2777]" };
       case "booking":
         return { icon: Calendar, bg: "bg-[#EFF8FF]", color: "text-[#3B82F6]" };
       case "payment":
@@ -39,28 +47,11 @@ export default function NotificationsView() {
 
   const handleAddNotification = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    // Inject into localStorage (manual notification via OpsHub state isn't directly exposed,
-    // so we use a workaround: read localStorage, add item, write back, reload notifications)
-    try {
-      const stored = localStorage.getItem("planc_opshub_state_v1");
-      const data = stored ? JSON.parse(stored) : {};
-      const existingNotifs: Array<Record<string, unknown>> = Array.isArray(data.notifications) ? data.notifications : [];
-      const newNotif = {
-        id: `N-MAN-${Date.now()}`,
-        type: newType,
-        message: newMessage.trim(),
-        read: false,
-        createdAt: "Just now",
-      };
-      data.notifications = [newNotif, ...existingNotifs];
-      localStorage.setItem("planc_opshub_state_v1", JSON.stringify(data));
-      window.location.reload(); // reload to pick up the new notification
-    } catch (err) {
-      console.error("Failed to add notification", err);
+    if (!newMessage.trim()) {
+      addNotification(newType, newMessage);
+      return;
     }
-
+    addNotification(newType, newMessage);
     setNewMessage("");
     setShowAddModal(false);
   };

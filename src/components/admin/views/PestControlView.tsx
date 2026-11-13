@@ -6,7 +6,7 @@ import { useOpsHub } from "@/context/OpsHubContext";
 import { PestPlanItem } from "@/types/opsHub";
 
 export default function PestControlView() {
-  const { pestPlans, addPestPlan, updatePestPlan, deletePestPlan } = useOpsHub();
+  const { pestPlans, addPestPlan, updatePestPlan, deletePestPlan, showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingPlan, setEditingPlan] = useState<PestPlanItem | null>(null);
@@ -25,7 +25,10 @@ export default function PestControlView() {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!type.trim()) return;
+    if (!type.trim()) {
+      showToast("Enter a plan name before saving.", "warning");
+      return;
+    }
 
     if (editingPlan) {
       updatePestPlan(editingPlan.id, {

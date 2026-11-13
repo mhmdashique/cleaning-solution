@@ -48,6 +48,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     service_name TEXT,
     address TEXT NOT NULL,
     preferred_date DATE,
+    reschedule_requested_date DATE,
+    reschedule_reason TEXT,
+    reschedule_requested_at TIMESTAMP WITH TIME ZONE,
     message TEXT,
     status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Confirmed', 'In progress', 'Completed', 'Cancelled')),
     amount NUMERIC(12, 2),
@@ -62,6 +65,15 @@ ALTER TABLE bookings
 
 ALTER TABLE bookings
     ADD COLUMN IF NOT EXISTS is_paid BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS reschedule_requested_date DATE;
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS reschedule_reason TEXT;
+
+ALTER TABLE bookings
+    ADD COLUMN IF NOT EXISTS reschedule_requested_at TIMESTAMP WITH TIME ZONE;
 
 -- Index for booking lookups
 CREATE INDEX IF NOT EXISTS idx_bookings_code ON bookings(booking_code);

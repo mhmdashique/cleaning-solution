@@ -10,7 +10,7 @@ interface CustomersViewProps {
 }
 
 export default function CustomersView({ onOpenCustomerDetail }: CustomersViewProps) {
-  const { customers, bookings, addCustomer, updateCustomer, deleteCustomer } = useOpsHub();
+  const { customers, bookings, addCustomer, updateCustomer, deleteCustomer, showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -36,7 +36,10 @@ export default function CustomersView({ onOpenCustomerDetail }: CustomersViewPro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim() || !phone.trim()) {
+      showToast("Customer name and phone number are required.", "warning");
+      return;
+    }
 
     if (editingCustomer) {
       updateCustomer(editingCustomer.id, {

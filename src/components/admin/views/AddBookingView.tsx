@@ -10,7 +10,7 @@ interface AddBookingViewProps {
 }
 
 export default function AddBookingView({ onBack, onSuccess }: AddBookingViewProps) {
-  const { customers, services, team, addBooking } = useOpsHub();
+  const { customers, services, team, addBooking, showToast } = useOpsHub();
 
   const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0]?.id || "");
   const [selectedServiceId, setSelectedServiceId] = useState(services[0]?.id || "");
@@ -38,7 +38,10 @@ export default function AddBookingView({ onBack, onSuccess }: AddBookingViewProp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCustomerId || !selectedServiceId) return;
+    if (!selectedCustomerId || !selectedServiceId) {
+      showToast("Choose a customer and service before creating the booking.", "warning");
+      return;
+    }
 
     addBooking({
       customerId: selectedCustomerId,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import {
   Customer,
   ServiceItem,
@@ -15,7 +15,15 @@ import {
   ExtraCharge,
   ServiceCategoryType,
 } from "@/types/opsHub";
-import { Service, Booking } from "@/types";
+import { Service, Booking, BookingStatus } from "@/types";
+import Toast, { ToastMessage } from "@/components/admin/shared/Toast";
+import type { ToastType } from "@/components/admin/shared/Toast";
+import {
+  updateBookingAdminAction,
+  updateBookingAmountAdminAction,
+  updateBookingPaymentStatusAdminAction,
+  deleteBookingAdminAction,
+} from "@/app/actions/admin";
 import {
   SEED_CUSTOMERS,
   SEED_SERVICES,
@@ -36,6 +44,7 @@ interface OpsHubContextType {
   payments: PaymentRecord[];
   notifications: AppNotification[];
   settings: BusinessSettings;
+  showToast: (text: string, type?: ToastType) => void;
 
   // Actions
   addCustomer: (data: Omit<Customer, "id" | "createdAt">) => Customer;
@@ -76,6 +85,7 @@ interface OpsHubContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
   deleteNotification: (id: string) => void;
+  addNotification: (type: AppNotification["type"], message: string) => void;
 
   updateSettings: (patch: Partial<BusinessSettings>) => void;
   resetAllData: () => void;
@@ -95,6 +105,7 @@ export const defaultFallbackOpsHub: OpsHubContextType = {
   payments: SEED_PAYMENTS,
   notifications: SEED_NOTIFICATIONS,
   settings: SEED_SETTINGS,
+  showToast: () => {},
   addCustomer: (data) => ({
     ...data,
     id: `C-${Date.now()}`,
@@ -142,6 +153,7 @@ export const defaultFallbackOpsHub: OpsHubContextType = {
   markNotificationAsRead: () => {},
   markAllNotificationsAsRead: () => {},
   deleteNotification: () => {},
+  addNotification: () => {},
   updateSettings: () => {},
   resetAllData: () => {},
   getCustomerById: (id: string) => SEED_CUSTOMERS.find((c) => c.id === id),
@@ -180,6 +192,7 @@ function mapWebsiteBookingToRecord(b: Booking, existingServices: ServiceItem[]):
   const statusMap: Record<string, BookingStatusType> = {
     Pending: "Pending",
     Confirmed: "Confirmed",
+    "In progress": "In Progress",
     "In Progress": "In Progress",
     Completed: "Completed",
     Cancelled: "Cancelled",
@@ -196,6 +209,9 @@ function mapWebsiteBookingToRecord(b: Booking, existingServices: ServiceItem[]):
     status: statusMap[b.status] || "Pending",
     amount: b.amount ?? 0,
     notes: [b.message, b.admin_notes].filter(Boolean).join(" · ") || `Website booking from ${b.name}`,
+    rescheduleRequestedDate: b.reschedule_requested_date || undefined,
+    rescheduleReason: b.reschedule_reason || undefined,
+    rescheduleRequestedAt: b.reschedule_requested_at || undefined,
     createdAt: b.created_at?.split("T")[0] || new Date().toISOString().split("T")[0],
     statusHistory: [
       {
@@ -242,6 +258,11 @@ export function OpsHubProvider({
   const [payments, setPayments] = useState<PaymentRecord[]>(SEED_PAYMENTS);
   const [notifications, setNotifications] = useState<AppNotification[]>(SEED_NOTIFICATIONS);
   const [settings, setSettings] = useState<BusinessSettings>(SEED_SETTINGS);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  const showToast = useCallback((text: string, type: ToastType = "success") => {
+    setToast({ id: `toast-${Date.now()}`, text, type });
+  }, []);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -279,12 +300,36 @@ export function OpsHubProvider({
     const currentServices = services;
 
     setBookings((prev) => {
-      const existingIds = new Set(prev.map((b) => b.id));
-      const mapped = initialBookings
-        .map((wb) => mapWebsiteBookingToRecord(wb, currentServices))
-        .filter((wb) => !existingIds.has(wb.id));
+      // Build a map of fresh records from initialBookings
+      const incomingRecords = initialBookings.map((wb) =>
+        mapWebsiteBookingToRecord(wb, currentServices)
+      );
 
-      if (mapped.length === 0) return prev;
+      // Create a map by id
+      const incomingMap = new Map(incomingRecords.map((r) => [r.id, r]));
+
+      // Update existing local records if server has fresher status or data, preserve any purely local properties
+      const updatedPrev = prev.map((localB) => {
+        const incoming = incomingMap.get(localB.id);
+        if (!incoming) return localB;
+        // Merge server status & fields, keeping any detailed history
+        return {
+          ...localB,
+          status: incoming.status,
+          amount: incoming.amount || localB.amount,
+          date: incoming.date || localB.date,
+          address: incoming.address || localB.address,
+          rescheduleRequestedDate: incoming.rescheduleRequestedDate,
+          rescheduleReason: incoming.rescheduleReason,
+          rescheduleRequestedAt: incoming.rescheduleRequestedAt,
+        };
+      });
+
+      // Add any brand new bookings not yet in prev
+      const existingIds = new Set(prev.map((b) => b.id));
+      const newItems = incomingRecords.filter((wb) => !existingIds.has(wb.id));
+
+      if (newItems.length === 0) return updatedPrev;
 
       // Also auto-create customer records for new website bookings
       setCustomers((prevCustomers) => {
@@ -310,9 +355,48 @@ export function OpsHubProvider({
         return [...newCustomers, ...prevCustomers];
       });
 
-      return [...mapped, ...prev];
+      return [...newItems, ...updatedPrev];
     });
   }, [isLoaded, initialBookings, services]);
+
+  useEffect(() => {
+    if (!isLoaded || !initialBookings) return;
+
+    setNotifications((previous) => {
+      const previousById = new Map(previous.map((notification) => [notification.id, notification]));
+      const rescheduleNotifications = initialBookings
+        .filter((booking) => booking.reschedule_requested_date)
+        .map((booking): AppNotification => {
+          const requestId = booking.reschedule_requested_at || booking.reschedule_requested_date!;
+          const id = `N-RSC-${booking.booking_code}-${requestId.replace(/[^a-zA-Z0-9]/g, "")}`;
+          const existing = previousById.get(id);
+          const requestedAt = booking.reschedule_requested_at
+            ? new Date(booking.reschedule_requested_at)
+            : null;
+
+          return {
+            id,
+            type: "reschedule",
+            message: `Reschedule request from ${booking.name} (${booking.booking_code}) → ${booking.reschedule_requested_date}${booking.reschedule_reason ? `: ${booking.reschedule_reason}` : ""}`,
+            relatedId: booking.booking_code,
+            targetTab: "bookings",
+            read: existing?.read ?? false,
+            createdAt:
+              requestedAt && !Number.isNaN(requestedAt.getTime())
+                ? requestedAt.toLocaleString("en-IN", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })
+                : "Recently",
+          };
+        });
+
+      return [
+        ...rescheduleNotifications,
+        ...previous.filter((notification) => notification.type !== "reschedule"),
+      ];
+    });
+  }, [initialBookings, isLoaded]);
 
   // Save to localStorage on change
   useEffect(() => {
@@ -364,6 +448,7 @@ export function OpsHubProvider({
     };
     setCustomers((prev) => [newCust, ...prev]);
     notify(`New customer added: ${newCust.name}`, "customer", newCust.id, "customers");
+    showToast(`Customer ${newCust.name} added.`);
     return newCust;
   };
 
@@ -371,15 +456,18 @@ export function OpsHubProvider({
     setCustomers((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...patch } : c))
     );
+    showToast("Customer details updated.");
   };
 
   const deleteCustomer = (id: string): boolean => {
     // Check if customer has active bookings
     const hasBookings = bookings.some((b) => b.customerId === id);
     if (hasBookings) {
+      showToast("This customer has bookings and cannot be deleted.", "warning");
       return false;
     }
     setCustomers((prev) => prev.filter((c) => c.id !== id));
+    showToast("Customer deleted.");
     return true;
   };
 
@@ -412,15 +500,18 @@ export function OpsHubProvider({
     };
     setPestPlans((prev) => [newPlan, ...prev]);
     notify(`New pest plan created: ${newPlan.type}`, "service", newPlan.id, "pest-control");
+    showToast(`Pest control plan ${newPlan.type} added.`);
     return newPlan;
   };
 
   const updatePestPlan = (id: string, patch: Partial<PestPlanItem>) => {
     setPestPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    showToast("Pest control plan updated.");
   };
 
   const deletePestPlan = (id: string) => {
     setPestPlans((prev) => prev.filter((p) => p.id !== id));
+    showToast("Pest control plan deleted.");
   };
 
   // Actions: Team
@@ -432,15 +523,18 @@ export function OpsHubProvider({
       joinedAt: new Date().toISOString().split("T")[0],
     };
     setTeam((prev) => [newMember, ...prev]);
+    showToast(`${newMember.name} added to the team.`);
     return newMember;
   };
 
   const updateTeamMember = (id: string, patch: Partial<TeamMember>) => {
     setTeam((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+    showToast("Team member details updated.");
   };
 
   const deleteTeamMember = (id: string) => {
     setTeam((prev) => prev.filter((t) => t.id !== id));
+    showToast("Team member removed.");
   };
 
   // Actions: Bookings
@@ -497,11 +591,13 @@ export function OpsHubProvider({
 
     const custName = getCustomerById(data.customerId)?.name || "Customer";
     notify(`New booking confirmed for ${custName} (${newBooking.id})`, "booking", newBooking.id, "bookings");
+    showToast(`Booking ${newBooking.id} created successfully.`);
 
     return newBooking;
   };
 
   const updateBookingStatus = (id: string, newStatus: BookingStatusType, note?: string) => {
+    // 1. Update React state immediately for snappy UI
     setBookings((prev) =>
       prev.map((b) => {
         if (b.id !== id) return b;
@@ -528,6 +624,23 @@ export function OpsHubProvider({
     }
 
     notify(`Booking ${id} status updated to ${newStatus}`, "booking", id, "bookings");
+
+    // 2. Persist to Database & Server (normalizing "In Progress" -> "In progress" to match Supabase enum)
+    const normalizedStatus: BookingStatus =
+      newStatus === "In Progress" ? "In progress" : (newStatus as BookingStatus);
+
+    updateBookingAdminAction(id, normalizedStatus, note)
+      .then((result) => {
+        if (!result.success) {
+          showToast(result.error || "Could not update booking status.", "error");
+          return;
+        }
+        showToast(`Booking status changed to ${newStatus}.`);
+      })
+      .catch((err) => {
+        console.error("Failed to sync booking status to server:", err);
+        showToast("Could not save booking status. Please try again.", "error");
+      });
   };
 
   const updateBookingPricing = (
@@ -550,12 +663,42 @@ export function OpsHubProvider({
       setPayments((prev) =>
         prev.map((p) => (p.bookingId === id ? { ...p, amount: pricing.amount! } : p))
       );
+
+      // Persist amount to DB
+      updateBookingAmountAdminAction(id, pricing.amount)
+        .then((result) => {
+          if (!result.success) {
+            showToast(result.error || "Could not save the booking amount.", "error");
+            return;
+          }
+          showToast("Booking amount updated.");
+        })
+        .catch((err) => {
+          console.error("Failed to sync booking amount to server:", err);
+          showToast("Could not save the booking amount. Please try again.", "error");
+        });
+    } else {
+      showToast("Booking pricing details updated.");
     }
   };
 
   const deleteBooking = (id: string) => {
     setBookings((prev) => prev.filter((b) => b.id !== id));
     setPayments((prev) => prev.filter((p) => p.bookingId !== id));
+
+    // Persist deletion to DB
+    deleteBookingAdminAction(id)
+      .then((result) => {
+        if (!result.success) {
+          showToast(result.error || "Could not delete the booking.", "error");
+          return;
+        }
+        showToast(`Booking ${id} deleted.`);
+      })
+      .catch((err) => {
+        console.error("Failed to delete booking from server:", err);
+        showToast("Could not delete the booking. Please try again.", "error");
+      });
   };
 
   // Actions: Payments
@@ -564,6 +707,7 @@ export function OpsHubProvider({
       prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
     );
     notify(`Invoice ${id} marked as ${newStatus}`, "payment", id, "payments");
+    showToast(`Invoice marked as ${newStatus}.`);
   };
 
   // Actions: Notifications
@@ -571,14 +715,27 @@ export function OpsHubProvider({
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    showToast("Notification marked as read.");
   };
 
   const markAllNotificationsAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    showToast("All notifications marked as read.");
   };
 
   const deleteNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    showToast("Notification deleted.");
+  };
+
+  const addNotification = (type: AppNotification["type"], message: string) => {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
+      showToast("Enter a notification message.", "warning");
+      return;
+    }
+    notify(trimmedMessage, type);
+    showToast("Notification added.");
   };
 
   // Actions: Settings
@@ -596,6 +753,7 @@ export function OpsHubProvider({
     setNotifications(SEED_NOTIFICATIONS);
     setSettings(SEED_SETTINGS);
     localStorage.removeItem(STORAGE_KEY);
+    showToast("Operations data reset to the initial records.");
   };
 
   const value = useMemo(
@@ -608,6 +766,7 @@ export function OpsHubProvider({
       payments,
       notifications,
       settings,
+      showToast,
       addCustomer,
       updateCustomer,
       deleteCustomer,
@@ -628,6 +787,7 @@ export function OpsHubProvider({
       markNotificationAsRead,
       markAllNotificationsAsRead,
       deleteNotification,
+      addNotification,
       updateSettings,
       resetAllData,
       getCustomerById,
@@ -635,14 +795,18 @@ export function OpsHubProvider({
       getTeamMemberById,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [customers, services, pestPlans, team, bookings, payments, notifications, settings]
+    [customers, services, pestPlans, team, bookings, payments, notifications, settings, showToast]
   );
 
-  return <OpsHubContext.Provider value={value}>{children}</OpsHubContext.Provider>;
+  return (
+    <OpsHubContext.Provider value={value}>
+      {children}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
+    </OpsHubContext.Provider>
+  );
 }
 
 export function useOpsHub(): OpsHubContextType {
   const context = useContext(OpsHubContext);
   return context || defaultFallbackOpsHub;
 }
-

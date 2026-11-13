@@ -6,6 +6,7 @@ import {
   updateBookingStatus,
   updateBookingAmount,
   updateBookingPaymentStatus,
+  deleteBooking,
   updateReviewApproval,
   deleteReview,
   createBlogPost,
@@ -72,6 +73,16 @@ export async function updateBookingAdminAction(
   if (!isAdmin) return { success: false, error: "Unauthorized" };
 
   await updateBookingStatus(id, status, notes, team);
+  revalidatePath("/admin");
+  revalidatePath("/track");
+  return { success: true };
+}
+
+export async function deleteBookingAdminAction(id: string) {
+  const isAdmin = await checkAdminSession();
+  if (!isAdmin) return { success: false, error: "Unauthorized" };
+
+  await deleteBooking(id);
   revalidatePath("/admin");
   revalidatePath("/track");
   return { success: true };

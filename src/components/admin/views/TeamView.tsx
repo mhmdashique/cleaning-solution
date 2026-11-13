@@ -6,7 +6,7 @@ import { useOpsHub } from "@/context/OpsHubContext";
 import { TeamMember } from "@/types/opsHub";
 
 export default function TeamView() {
-  const { team, addTeamMember, updateTeamMember, deleteTeamMember } = useOpsHub();
+  const { team, addTeamMember, updateTeamMember, deleteTeamMember, showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -25,7 +25,10 @@ export default function TeamView() {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showToast("Enter a team member name before saving.", "warning");
+      return;
+    }
 
     if (editingMember) {
       updateTeamMember(editingMember.id, {

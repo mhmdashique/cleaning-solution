@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, Search, Edit2, Trash2, Copy, Eye, EyeOff, X } from "lucide-react";
 import { AdminArticle } from "@/types/admin";
+import { useOpsHub } from "@/context/OpsHubContext";
 
 interface ArticlesViewProps {
   articles: AdminArticle[];
@@ -31,6 +32,7 @@ export default function ArticlesView({
   onToggleStatus,
   onDeleteArticle,
 }: ArticlesViewProps) {
+  const { showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingArticle, setEditingArticle] = useState<AdminArticle | null>(null);
@@ -69,7 +71,10 @@ export default function ArticlesView({
 
   const handleSaveAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      showToast("Enter an article title before saving.", "warning");
+      return;
+    }
     onCreateArticle({
       title: title.trim(),
       excerpt: excerpt.trim(),
@@ -83,7 +88,11 @@ export default function ArticlesView({
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingArticle || !title.trim()) return;
+    if (!editingArticle) return;
+    if (!title.trim()) {
+      showToast("Enter an article title before saving.", "warning");
+      return;
+    }
     onUpdateArticle(editingArticle.id, {
       title: title.trim(),
       excerpt: excerpt.trim(),

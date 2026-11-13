@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Edit2,
   CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 import { BookingStatusType, ExtraCharge } from "@/types/opsHub";
@@ -37,6 +38,7 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
     team,
     updateBookingStatus,
     updateBookingPricing,
+    showToast,
   } = useOpsHub();
 
   const booking = bookings.find((b) => b.id === bookingId);
@@ -79,25 +81,37 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
   const isPaidInFull = totalOrderValue > 0 && balanceDue === 0;
 
   const handleSaveBasePrice = () => {
-    const parsed = Math.max(0, Number(basePriceInput) || 0);
+    const parsed = Number(basePriceInput);
+    if (!basePriceInput.trim() || !Number.isFinite(parsed) || parsed < 0) {
+      showToast("Enter a valid non-negative booking amount.", "warning");
+      return;
+    }
     updateBookingPricing(booking.id, { amount: parsed });
     setIsEditingBasePrice(false);
   };
 
   const handleSaveAdvance = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = Math.max(0, Number(advanceInput) || 0);
+    const parsed = Number(advanceInput);
+    if (!advanceInput.trim() || !Number.isFinite(parsed) || parsed < 0) {
+      showToast("Enter a valid non-negative advance amount.", "warning");
+      return;
+    }
     updateBookingPricing(booking.id, { advancePaid: parsed });
     setShowAddAdvanceModal(false);
   };
 
   const handleAddExtra = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!extraTitle.trim() || !extraAmount) return;
+    const parsedAmount = Number(extraAmount);
+    if (!extraTitle.trim() || !extraAmount.trim() || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+      showToast("Enter an extra charge name and a valid positive amount.", "warning");
+      return;
+    }
     const newExtra: ExtraCharge = {
       id: `ext-${Date.now()}`,
       title: extraTitle.trim(),
-      amount: Math.max(0, Number(extraAmount) || 0),
+      amount: parsedAmount,
     };
     const updated = [...extraCharges, newExtra];
     updateBookingPricing(booking.id, { extraCharges: updated });
@@ -364,6 +378,26 @@ export default function BookingDetailView({ bookingId, onBack }: BookingDetailVi
                   <span>{booking.time}</span>
                 </div>
               </div>
+
+              {booking.rescheduleRequestedDate && (
+                <div className="p-4 rounded-2xl bg-[#FFF7FB] border border-[#FBCFE8] space-y-1.5 sm:col-span-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#DB2777] flex items-center gap-1.5">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Customer Reschedule Request
+                  </span>
+                  <div className="text-[14px] font-extrabold text-[#831843]">
+                    Requested date: {booking.rescheduleRequestedDate}
+                  </div>
+                  {booking.rescheduleReason && (
+                    <div className="text-[13px] font-medium text-[#9D174D]">
+                      Reason: {booking.rescheduleReason}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-[#9D174D]">
+                    Current appointment remains {booking.date} until the new date is confirmed.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Search, Edit2, Trash2, Clock, X, Star, Sparkles, Check, AlertCircle } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Clock, X, Star, Sparkles } from "lucide-react";
 import { Service, ServiceCategory } from "@/types";
 import { useOpsHub } from "@/context/OpsHubContext";
 import { ServiceCategoryType } from "@/types/opsHub";
@@ -60,7 +60,7 @@ function mapDbToDisplay(s: Service): DisplayService {
 }
 
 export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
-  const { services: opsServices, addService, updateService, deleteService } = useOpsHub();
+  const { services: opsServices, addService, updateService, deleteService, showToast } = useOpsHub();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<"All" | ServiceCategoryType>("All");
 
@@ -93,7 +93,6 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingService, setEditingService] = useState<DisplayService | null>(null);
   const [deleteCandidate, setDeleteCandidate] = useState<DisplayService | null>(null);
-  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState("");
@@ -104,11 +103,6 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
   const [isFeatured, setIsFeatured] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
-
-  const showFeedback = (msg: string) => {
-    setActionNotice(msg);
-    setTimeout(() => setActionNotice(null), 3000);
-  };
 
   const filtered = useMemo(() => {
     return items.filter((s) => {
@@ -151,7 +145,10 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
 
   const handleSaveAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      showToast("Enter a service name before saving.", "warning");
+      return;
+    }
 
     const slug = name
       .toLowerCase()
@@ -188,7 +185,7 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
     // Call server action to save to website database
     try {
       const adminCat = category === "Pest Control" ? "Pest control" : category;
-      await createServiceAdminAction({
+      const result = await createServiceAdminAction({
         name: newDisplayItem.name,
         slug: newDisplayItem.slug,
         category: adminCat as any,
@@ -198,9 +195,14 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
         isActive: newDisplayItem.status === "Active",
         imageUrl: newDisplayItem.imageUrl,
       });
-      showFeedback(`Service "${newDisplayItem.name}" published to website!`);
+      if (!result.success) {
+        showToast(result.error || "Could not publish the service.", "error");
+        return;
+      }
+      showToast(`Service "${newDisplayItem.name}" published to website.`);
     } catch (err) {
       console.error("Failed to sync new service to server", err);
+      showToast("Could not publish the service. Please try again.", "error");
     }
 
     setShowAddModal(false);
@@ -208,7 +210,11 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingService || !name.trim()) return;
+    if (!editingService) return;
+    if (!name.trim()) {
+      showToast("Enter a service name before saving.", "warning");
+      return;
+    }
 
     const updatedItem: DisplayService = {
       ...editingService,
@@ -239,7 +245,7 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
     // Sync to website server action
     try {
       const adminCat = category === "Pest Control" ? "Pest control" : category;
-      await updateServiceAdminAction(editingService.id, {
+      const result = await updateServiceAdminAction(editingService.id, {
         name: updatedItem.name,
         category: adminCat as any,
         shortDesc: updatedItem.description,
@@ -248,9 +254,14 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
         isActive: updatedItem.status === "Active",
         imageUrl: updatedItem.imageUrl,
       });
-      showFeedback(`Service "${updatedItem.name}" updated on website!`);
+      if (!result.success) {
+        showToast(result.error || "Could not update the service.", "error");
+        return;
+      }
+      showToast(`Service "${updatedItem.name}" updated on website.`);
     } catch (err) {
       console.error("Failed to sync service update to server", err);
+      showToast("Could not update the service. Please try again.", "error");
     }
 
     setEditingService(null);
@@ -267,10 +278,15 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
     updateService(service.id, { status: newStatus });
 
     try {
-      await toggleServiceActiveAdminAction(service.id, isActive);
-      showFeedback(`Service ${service.name} is now ${newStatus}`);
+      const result = await toggleServiceActiveAdminAction(service.id, isActive);
+      if (!result.success) {
+        showToast(result.error || "Could not update service visibility.", "error");
+        return;
+      }
+      showToast(`Service ${service.name} is now ${newStatus}.`);
     } catch (err) {
       console.error("Failed to toggle active", err);
+      showToast("Could not update service visibility. Please try again.", "error");
     }
   };
 
@@ -282,14 +298,19 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
     );
 
     try {
-      await toggleServiceFeaturedAdminAction(service.id, newFeatured);
-      showFeedback(
+      const result = await toggleServiceFeaturedAdminAction(service.id, newFeatured);
+      if (!result.success) {
+        showToast(result.error || "Could not update featured service status.", "error");
+        return;
+      }
+      showToast(
         newFeatured
           ? `"${service.name}" is now featured on the homepage!`
-          : `"${service.name}" unfeatured.`
+          : `"${service.name}" removed from homepage features.`
       );
     } catch (err) {
       console.error("Failed to toggle featured", err);
+      showToast("Could not update featured service status. Please try again.", "error");
     }
   };
 
@@ -303,10 +324,15 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
     deleteService(id);
 
     try {
-      await deleteServiceAdminAction(id);
-      showFeedback(`Service "${name}" deleted.`);
+      const result = await deleteServiceAdminAction(id);
+      if (!result.success) {
+        showToast(result.error || "Could not delete the service.", "error");
+        return;
+      }
+      showToast(`Service "${name}" deleted.`);
     } catch (err) {
       console.error("Failed to delete service on server", err);
+      showToast("Could not delete the service. Please try again.", "error");
     }
 
     setDeleteCandidate(null);
@@ -331,13 +357,6 @@ export default function ServicesView({ dbServices = [] }: ServicesViewProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          {actionNotice && (
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#E7F8F0] text-[#12B76A] text-[13px] font-bold animate-in fade-in">
-              <Check className="w-4 h-4" />
-              <span>{actionNotice}</span>
-            </div>
-          )}
-
           <button
             type="button"
             onClick={handleOpenAdd}

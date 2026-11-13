@@ -354,6 +354,8 @@ export async function getAllBookings(): Promise<Booking[]> {
   return memoryDb.bookings;
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function updateBookingStatus(
   id: string,
   status: BookingStatus,
@@ -366,10 +368,14 @@ export async function updateBookingStatus(
       if (adminNotes !== undefined) updateData.admin_notes = adminNotes;
       if (assignedTeam !== undefined) updateData.assigned_team = assignedTeam;
 
-      const { error } = await db
-        .from("bookings")
-        .update(updateData)
-        .or(`id.eq.${id},booking_code.eq.${id}`);
+      let query = db.from("bookings").update(updateData);
+      if (UUID_REGEX.test(id)) {
+        query = query.eq("id", id);
+      } else {
+        query = query.eq("booking_code", id);
+      }
+
+      const { error } = await query;
       if (!error) return true;
     } catch {
       // fallback
@@ -388,17 +394,54 @@ export async function updateBookingStatus(
   return false;
 }
 
+export async function saveBookingRescheduleRequest(
+  bookingCode: string,
+  requestedDate: string,
+  reason: string
+): Promise<boolean> {
+  if (hasDb && db) {
+    const { data, error } = await db
+      .from("bookings")
+      .update({
+        reschedule_requested_date: requestedDate,
+        reschedule_reason: reason || null,
+        reschedule_requested_at: new Date().toISOString(),
+      })
+      .eq("booking_code", bookingCode)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to save reschedule request: ${error.message}`);
+    }
+
+    return data !== null;
+  }
+
+  const booking = memoryDb.bookings.find(
+    (item) => item.booking_code.toUpperCase() === bookingCode.toUpperCase()
+  );
+  if (!booking) return false;
+
+  booking.reschedule_requested_date = requestedDate;
+  booking.reschedule_reason = reason || null;
+  booking.reschedule_requested_at = new Date().toISOString();
+  return true;
+}
+
 export async function updateBookingAmount(
   id: string,
   amount: number | null
 ): Promise<boolean> {
   if (hasDb && db) {
-    const { data, error } = await db
-      .from("bookings")
-      .update({ amount })
-      .or(`id.eq.${id},booking_code.eq.${id}`)
-      .select("id")
-      .maybeSingle();
+    let query = db.from("bookings").update({ amount });
+    if (UUID_REGEX.test(id)) {
+      query = query.eq("id", id);
+    } else {
+      query = query.eq("booking_code", id);
+    }
+
+    const { data, error } = await query.select("id").maybeSingle();
 
     if (error) {
       throw new Error(error.message);
@@ -421,12 +464,14 @@ export async function updateBookingPaymentStatus(
   isPaid: boolean
 ): Promise<boolean> {
   if (hasDb && db) {
-    const { data, error } = await db
-      .from("bookings")
-      .update({ is_paid: isPaid })
-      .or(`id.eq.${id},booking_code.eq.${id}`)
-      .select("id")
-      .maybeSingle();
+    let query = db.from("bookings").update({ is_paid: isPaid });
+    if (UUID_REGEX.test(id)) {
+      query = query.eq("id", id);
+    } else {
+      query = query.eq("booking_code", id);
+    }
+
+    const { data, error } = await query.select("id").maybeSingle();
 
     if (error) {
       throw new Error(error.message);
@@ -442,6 +487,33 @@ export async function updateBookingPaymentStatus(
 
   target.is_paid = isPaid;
   return true;
+}
+
+export async function deleteBooking(id: string): Promise<boolean> {
+  if (hasDb && db) {
+    try {
+      let query = db.from("bookings").delete();
+      if (UUID_REGEX.test(id)) {
+        query = query.eq("id", id);
+      } else {
+        query = query.eq("booking_code", id);
+      }
+
+      const { error } = await query;
+      if (!error) return true;
+    } catch {
+      // fallback
+    }
+  }
+
+  const idx = memoryDb.bookings.findIndex(
+    (b) => b.id === id || b.booking_code === id
+  );
+  if (idx !== -1) {
+    memoryDb.bookings.splice(idx, 1);
+    return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
