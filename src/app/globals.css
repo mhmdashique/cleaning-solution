@@ -173,6 +173,10 @@ html:has([data-admin-shell]) {
   min-height: 100% !important;
 }
 
+html:has([data-admin-login-shell]) {
+  zoom: 1 !important;
+}
+
 body.admin-mode,
 body:has([data-admin-shell]) {
   zoom: 1 !important;
@@ -199,6 +203,11 @@ body:has([data-admin-shell]) > main {
   flex: 1 1 auto !important;
   min-height: 100% !important;
   background-color: #F6F7FD !important;
+}
+
+[data-admin-login-shell] {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
 }
 
 /* Hide Next.js dev indicator on admin pages */
