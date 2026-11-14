@@ -34,7 +34,7 @@ PLAN C Cleaning Solutions is a leading professional cleaning and pest control co
 |---|---|---|
 | `/` | **Home** | Hero with conversion CTAs, trust stats (5+ yrs, 2500+ happy clients), 3 customer segment cards, 6 featured services, 6 "Why Choose Us" pillars, 3-step workflow, real South Kerala customer reviews, latest 3 blog posts, and interactive footer. |
 | `/services` | **Services Directory** | Grouped by 4 categories (*Cleaning, Pest Control, Commercial, Specialised*) with real-time filter pills, instant live keyword search, and direct "Book this service" pre-fill buttons. |
-| `/services/[slug]` | **Service Detail** | Dedicated SEO landing page per service with custom meta tags, JSON-LD `Service` schema, process overview tailored to Kerala's climate, FAQs, and a sticky booking CTA card. |
+| `/services/[slug]` | **Service Detail** | Dedicated SEO landing page per service with custom meta tags, JSON-LD `Service` schema, process overview tailored to Kerala's climate, FAQs,ushu and a sticky booking CTA card. |
 | `/about` | **About Us** | Official company narrative, Mission & Vision statements, 6 core principle cards, and service area footprint. |
 | `/reviews` | **Reviews & Ratings** | 14+ South Kerala seeded reviews, average rating score (4.9/5), star breakdown distribution, rating filter, and an interactive "Write a Review" form (`approved: false` until admin approved). |
 | `/contact` | **Book / Contact** | Zod + React Hook Form booking submission with anti-spam honeypot, auto-generated unique booking codes (e.g. `PC-2025-XXXX`), interactive Google Maps embed for Thrikannapuram, directions button, and click-to-call. |
@@ -129,6 +129,34 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ---
 
 ## 7. Deploying to Vercel
+
+1. Push your repository to GitHub / GitLab.
+2. Import the repository in [Vercel](https://vercel.com).
+3. Set the Environment Variables in the Vercel dashboard:
+   - `ADMIN_PASSCODE`
+   - `NEXT_PUBLIC_SITE_URL` (your production domain)
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+4. Click **Deploy**. Vercel will build the project with automatic ISR caching, dynamic OG metadata, and sitemap generation.
+
+---
+
+## 8. Blog Section
+
+The home page displays the **latest 3 blog posts** from the knowledge base with:
+
+- **Cover Images**: Each blog post features a professional cover image using Next.js Image optimization
+- **Category Tags**: Posts are categorized by cleaning type (e.g., "Deep Cleaning", "Pest Control")
+- **Reading Time**: Estimated 4-minute read time for easy browsing
+- **Action Links**: "Read Article" buttons link to full Markdown content with dynamic Table of Contents
+- **SEO Optimized**: All posts target Kerala-specific keywords for local search dominance
+
+> **Note**: While our application uses cover images for visual appeal, the underlying content model focuses on text-based knowledge sharing for maintenance and pest control insights.
+
+---
+
+## 9. Deploying to Vercel
 
 1. Push your repository to GitHub / GitLab.
 2. Import the repository in [Vercel](https://vercel.com).

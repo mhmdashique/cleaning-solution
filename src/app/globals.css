@@ -8,6 +8,35 @@
   100% { transform: translateX(250%); width: 40%; }
 }
 
+@keyframes trusted-client-scroll {
+  to { transform: translateX(-50%); }
+}
+
+.trusted-client-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+}
+
+.trusted-client-track {
+  display: flex;
+  width: max-content;
+  animation: trusted-client-scroll 32s linear infinite;
+}
+
+.trusted-client-marquee:hover .trusted-client-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trusted-client-track {
+    animation: none;
+  }
+
+  .trusted-client-track > ul[aria-hidden="true"] {
+    display: none;
+  }
+}
+
 /* Plan C Ops Hub Tokens — Light theme by default */
 :root {
   --bg: #F6F7F6;
