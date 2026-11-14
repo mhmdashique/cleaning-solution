@@ -76,6 +76,7 @@ export default function AppShell({
           activeTab={activeTab}
           pendingCount={pendingCount}
           onNavigateTab={onNavigateTab}
+          onLogout={onLogout}
           isSidebarCollapsed={isSidebarCollapsed}
           onToggleSidebar={handleToggleSidebar}
         />

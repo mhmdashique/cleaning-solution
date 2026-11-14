@@ -7,10 +7,15 @@ import {
   getClientNoteStates,
 } from "@/lib/data/store";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { checkAdminSession } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!(await checkAdminSession())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const [bookings, services, reviews, blogPosts, clientNoteStates] =
       await Promise.all([

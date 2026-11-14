@@ -1,29 +1,48 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { verifyPasscodeAction } from "@/app/actions/admin";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { 
-  Lock, 
-  KeyRound, 
-  AlertCircle, 
-  ArrowRight, 
-  ShieldCheck, 
+import {
+  AlertCircle,
   ArrowLeft,
+  ArrowRight,
   Eye,
   EyeOff,
-  Sparkles
+  LockKeyhole,
+  ShieldCheck,
 } from "lucide-react";
+
+type LoginStatus = "loading" | "ready" | "unavailable";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function formatCountdown(remainingSeconds: number): string {
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 export default function PasscodeGate({
   onUnlocked,
+  nextPath,
 }: {
   onUnlocked?: () => void;
+  nextPath?: string;
 }) {
   const [passcode, setPasscode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [notice, setNotice] = useState<string | null>(null);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [lockDurationSeconds, setLockDurationSeconds] = useState<number | null>(
+    null
+  );
+  const [loginStatus, setLoginStatus] = useState<LoginStatus>("loading");
+  const [isPending, setIsPending] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.documentElement.classList.add("admin-mode");
@@ -45,134 +64,295 @@ export default function PasscodeGate({
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  useEffect(() => {
+    let active = true;
 
-    startTransition(async () => {
-      const res = await verifyPasscodeAction(passcode);
-      if (res.success) {
-        if (onUnlocked) {
-          onUnlocked();
-        } else {
-          window.location.reload();
+    async function loadLoginStatus() {
+      try {
+        const response = await fetch("/api/admin/login/status", {
+          cache: "no-store",
+        });
+        const payload: unknown = await response.json();
+        if (!response.ok || !isRecord(payload)) {
+          throw new Error("Unable to load sign-in status.");
         }
-      } else {
-        setError(res.error || "Incorrect security passcode.");
+
+        if (active) {
+          const until =
+            payload.locked === true && typeof payload.lockedUntil === "number"
+              ? payload.lockedUntil
+              : null;
+          setLockedUntil(until);
+          setLockDurationSeconds(
+            until !== null &&
+              typeof payload.lockDurationSeconds === "number"
+              ? payload.lockDurationSeconds
+              : null
+          );
+          setNow(Date.now());
+          setLoginStatus("ready");
+        }
+      } catch {
+        if (active) {
+          setError("Sign-in status is unavailable. Please try again later.");
+          setLoginStatus("unavailable");
+        }
       }
-    });
+    }
+
+    void loadLoginStatus();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  const remainingSeconds =
+    lockedUntil === null ? 0 : Math.max(0, Math.ceil((lockedUntil - now) / 1000));
+
+  useEffect(() => {
+    if (lockedUntil === null || remainingSeconds > 0) return;
+
+    setLockedUntil(null);
+    setLockDurationSeconds(null);
+    setError(null);
+    setNotice("You can try again now.");
+    setNow(Date.now());
+    passwordInputRef.current?.focus();
+  }, [lockedUntil, remainingSeconds]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setNotice(null);
+    setIsPending(true);
+
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passcode }),
+      });
+      const payload: unknown = await response.json();
+      if (!isRecord(payload)) {
+        throw new Error("Unexpected sign-in response.");
+      }
+
+      if (response.status === 429 && typeof payload.lockedUntil === "number") {
+        setLockedUntil(payload.lockedUntil);
+        setLockDurationSeconds(
+          typeof payload.lockDurationSeconds === "number"
+            ? payload.lockDurationSeconds
+            : 30
+        );
+        setPasscode("");
+        setNow(Date.now());
+        return;
+      }
+
+      if (response.status === 401) {
+        const left =
+          typeof payload.attemptsLeft === "number" ? payload.attemptsLeft : 0;
+        setError(
+          `Incorrect password. ${left} ${left === 1 ? "attempt" : "attempts"} left.`
+        );
+        return;
+      }
+
+      if (!response.ok || payload.success !== true) {
+        setError(
+          typeof payload.error === "string"
+            ? payload.error
+            : "Unable to sign in. Please try again."
+        );
+        return;
+      }
+
+      if (onUnlocked) {
+        onUnlocked();
+      } else {
+        window.location.assign(nextPath || "/admin");
+      }
+    } catch {
+      setError("Unable to sign in right now. Please try again.");
+    } finally {
+      setIsPending(false);
+    }
   };
 
-  return (
-    <div 
-      data-admin-shell
-      className="min-h-screen min-h-dvh w-full flex flex-col justify-between bg-[#F6F7FD] text-[#0F1535] p-6 sm:p-10 relative select-none font-sans"
-    >
-      {/* Background soft ambient glowing gradient orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#EEF0FF] rounded-full blur-3xl opacity-70" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#E7F8F0] rounded-full blur-3xl opacity-70" />
-      </div>
+  const locked = remainingSeconds > 0;
+  const progress =
+    locked && lockDurationSeconds
+      ? Math.min(
+          100,
+          Math.max(
+            0,
+            (remainingSeconds / lockDurationSeconds) * 100
+          )
+        )
+      : 0;
+  const isDisabled = loginStatus !== "ready" || locked || isPending;
 
-      {/* Top clean header */}
-      <header className="relative z-10 flex items-center justify-between max-w-5xl mx-auto w-full">
+  return (
+    <div
+      data-admin-shell
+      data-admin-login-shell
+      className="relative flex min-h-screen min-h-dvh w-full flex-col justify-between bg-[#F6F7FD] p-6 font-sans text-[#12201B] sm:px-10 sm:py-8"
+    >
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#3B82F6] via-[#12B76A] to-[#10B981] text-white flex items-center justify-center font-black text-[18px] tracking-tighter shadow-sm">
-            Z
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0F6B52] text-sm font-extrabold tracking-tight text-white shadow-sm">
+            PC
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-[#0F1535] text-[16px] tracking-tight">
-                Plan C
-              </span>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EEF0FF] text-[#5B5BF0]">
-                Operations Hub
-              </span>
-            </div>
-            <p className="text-[#6B7280] text-[11.5px] mt-0.5">
-              Thiruvananthapuram, Kerala
+            <p className="text-base font-extrabold tracking-tight text-[#12201B]">
+              PLAN C
+            </p>
+            <p className="text-[11px] text-[#5D6B65]">
+              Cleaning &amp; Pest Control
             </p>
           </div>
         </div>
 
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#6B7280] hover:text-[#0F1535] transition-colors py-2 px-4 rounded-xl bg-white border border-[#EEF0F6] shadow-2xs hover:shadow-xs"
+          className="inline-flex items-center gap-2 rounded-xl border border-[#E3E8E5] bg-white px-4 py-2 text-[13px] font-semibold text-[#5D6B65] transition-colors hover:text-[#12201B]"
         >
-          <ArrowLeft className="w-3.5 h-3.5 text-[#5B5BF0]" />
-          <span>Public website</span>
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Back to website</span>
         </Link>
       </header>
 
-      {/* Center Passcode Card */}
-      <main className="relative z-10 max-w-[400px] w-full mx-auto my-auto py-8">
-        <div className="bg-white rounded-[24px] p-7 sm:p-8 border border-[#EEF0F6] shadow-[0_12px_36px_rgba(91,91,240,0.08)] space-y-6">
+      <main className="relative z-10 mx-auto my-auto w-full max-w-[430px] py-8">
+        <div className="space-y-6 rounded-[24px] border border-[#E5E9E8] bg-white p-8 shadow-[0_20px_56px_rgba(18,32,27,0.09)] sm:p-9">
           <div className="space-y-2 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#EEF0FF] text-[#5B5BF0] flex items-center justify-center mx-auto shadow-xs">
-              <Lock className="w-6 h-6" />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E3F2EC] text-[#0F6B52]">
+              <LockKeyhole className="h-5 w-5" aria-hidden="true" />
             </div>
-            <h1 className="text-[22px] font-extrabold text-[#0F1535] tracking-tight pt-1">
-              Operations Console
+            <h1 className="pt-1 text-[24px] font-extrabold tracking-tight text-[#12201B]">
+              Admin sign in
             </h1>
-            <p className="text-[13.5px] text-[#6B7280] leading-relaxed">
-              Enter your authorized admin security passcode to unlock operations management.
+            <p className="text-[13.5px] leading-relaxed text-[#5D6B65]">
+              Enter your password to access the PLAN C operations dashboard.
             </p>
           </div>
 
+          {locked && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+            >
+              <p className="text-sm font-semibold">
+                Too many attempts. Try again in{" "}
+                <span className="font-mono tabular-nums">
+                  {formatCountdown(remainingSeconds)}
+                </span>
+              </p>
+              {lockDurationSeconds !== null && (
+                <div
+                  role="progressbar"
+                  aria-label="Login lockout time remaining"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(progress)}
+                  className="h-2 overflow-hidden rounded-full bg-amber-200"
+                >
+                  <div
+                    className="h-full rounded-full bg-amber-700 transition-[width] duration-700 ease-linear"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {!locked && notice && (
+            <p role="status" aria-live="polite" className="text-sm font-medium text-[#0F6B52]">
+              {notice}
+            </p>
+          )}
+
           {error && (
-            <div className="p-3 rounded-xl bg-[#FEF3F2] border border-[#FECDCA] text-[#B42318] text-[13px] flex items-center gap-2.5 animate-in fade-in duration-150">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div
+              role="alert"
+              className="flex items-center gap-2.5 rounded-xl border border-[#FECACA] bg-[#FEF2F2] p-3 text-[13px] text-[#991B1B]"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span className="font-medium">{error}</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] block">
-                Security Passcode
+              <label
+                htmlFor="admin-password"
+                className="block text-xs font-bold uppercase tracking-wider text-[#5D6B65]"
+              >
+                Password
               </label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
+                  ref={passwordInputRef}
+                  id="admin-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
-                  autoFocus
+                  autoComplete="current-password"
                   required
+                  disabled={isDisabled}
                   value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter passcode"
-                  className="w-full pl-10 pr-10 py-3 rounded-xl bg-[#F6F7FD] border border-[#EEF0F6] text-[#0F1535] font-mono text-[14px] font-semibold focus:outline-none focus:bg-white focus:border-[#5B5BF0] focus:ring-2 focus:ring-[#5B5BF0]/15 placeholder:text-[#9CA3AF] transition-all"
+                  onChange={(event) => {
+                    setPasscode(event.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Enter your password"
+                  className="w-full rounded-xl border border-[#CDD5D0] bg-white px-3.5 py-3 pr-12 text-sm text-[#12201B] outline-none transition focus:border-[#0F6B52] focus:ring-2 focus:ring-[#0F6B52]/20 disabled:cursor-not-allowed disabled:bg-[#F1F4F2] disabled:text-[#5D6B65] placeholder:text-[#77847D]"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#0F1535] p-1 transition-colors cursor-pointer"
-                  tabIndex={-1}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  disabled={isDisabled}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-[#5D6B65] transition-colors hover:text-[#12201B] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6B52] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
                 </button>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isPending || !passcode}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#5B5BF0] hover:bg-[#4E4EE0] disabled:opacity-50 text-white font-bold text-[14px] shadow-sm hover:shadow-md transition-all cursor-pointer disabled:cursor-not-allowed"
+              disabled={isDisabled || !passcode}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#0F6B52] px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-[#0B5944] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6B52] disabled:cursor-not-allowed disabled:opacity-55"
             >
-              <span>{isPending ? "Authenticating..." : "Unlock Console"}</span>
-              <ArrowRight className="w-4 h-4" />
+              <span>
+                {loginStatus === "loading"
+                  ? "Checking sign-in status..."
+                  : isPending
+                    ? "Signing in..."
+                    : "Sign in"}
+              </span>
+              {!isPending && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
             </button>
           </form>
 
-          <div className="pt-2 border-t border-[#EEF0F6] text-center flex items-center justify-center gap-1.5 text-[12px] text-[#6B7280]">
-            <ShieldCheck className="w-4 h-4 text-[#12B76A]" />
-            <span className="font-medium">Encrypted HTTP-only Secure Session</span>
+          <div className="flex items-center justify-center gap-1.5 border-t border-[#E3E8E5] pt-4 text-center text-xs text-[#5D6B65]">
+            <ShieldCheck className="h-4 w-4 text-[#0F6B52]" aria-hidden="true" />
+            <span>Secure, encrypted admin session</span>
           </div>
         </div>
       </main>
 
-      {/* Bottom minimal footer */}
-      <footer className="relative z-10 text-center text-[12px] text-[#9CA3AF]">
-        Plan C Cleaning Solutions · Thrikannapuram, Thiruvananthapuram, Kerala 695032
+      <footer className="relative z-10 text-center text-xs text-[#5D6B65]">
+        PLAN C Cleaning Solutions · Thrikannapuram, Thiruvananthapuram, Kerala
       </footer>
     </div>
   );

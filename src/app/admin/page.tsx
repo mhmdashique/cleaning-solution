@@ -1,8 +1,8 @@
 import { Metadata } from "next";
-import { checkAdminSession } from "@/app/actions/admin";
-import PasscodeGate from "@/components/admin/PasscodeGate";
+import { redirect } from "next/navigation";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import { OpsHubProvider } from "@/context/OpsHubContext";
+import { checkAdminSession } from "@/lib/admin-auth";
 import { 
   getAllBookings, 
   getServices, 
@@ -22,10 +22,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const isAuthenticated = await checkAdminSession();
-
-  if (!isAuthenticated) {
-    return <PasscodeGate />;
+  if (!(await checkAdminSession())) {
+    redirect("/admin/login");
   }
 
   const [bookings, services, reviews, blogPosts, clientNoteStates] =

@@ -232,6 +232,38 @@ function Navbar() {
   );
 }
 
+function AdminKeyboardShortcut() {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        !(event.ctrlKey || event.metaKey) ||
+        !event.shiftKey ||
+        event.key.toLowerCase() !== "a"
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable ||
+          target.closest("input, textarea, select, [contenteditable='true']"))
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      // This shortcut is convenience only; admin access is enforced server-side.
+      window.location.assign("/admin/login");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // FOOTER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -408,6 +440,14 @@ function Footer({ services }: { services: FooterService[] }) {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-slate-500 text-center sm:text-left">
             © {currentYear} PLAN C Cleaning Solutions. All rights reserved.
+            <Link
+              href="/admin/login"
+              aria-label="Staff login"
+              rel="nofollow"
+              className="text-slate-500 no-underline"
+            >
+              {" · "}
+            </Link>
             Thrikannapuram, Thiruvananthapuram, Kerala.
           </p>
           <div className="flex items-center gap-4 text-xs text-slate-500">
@@ -483,7 +523,12 @@ function FloatingActions() {
 export function NavbarShell() {
   const pathname = usePathname();
   if (pathname?.startsWith("/admin")) return null;
-  return <Navbar />;
+  return (
+    <>
+      <Navbar />
+      <AdminKeyboardShortcut />
+    </>
+  );
 }
 
 export function FooterShell({

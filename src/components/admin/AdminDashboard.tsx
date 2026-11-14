@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Booking, Service, Review, BlogPost } from "@/types";
 import {
-  logoutAdminAction,
   toggleReviewApprovalAction,
   deleteReviewAdminAction,
   saveBlogPostAdminAction,
@@ -173,12 +172,20 @@ function AdminDashboardContent({
   }, [dbBookings]);
 
   const handleLogout = async () => {
-    // Clear persisted navigation state on logout
-    sessionStorage.removeItem("planc_admin_tab");
-    sessionStorage.removeItem("planc_admin_booking_id");
-    sessionStorage.removeItem("planc_admin_customer_id");
-    await logoutAdminAction();
-    window.location.reload();
+    try {
+      const response = await fetch("/api/admin/logout", { method: "POST" });
+      if (!response.ok) {
+        throw new Error(`Logout failed with status ${response.status}.`);
+      }
+
+      sessionStorage.removeItem("planc_admin_tab");
+      sessionStorage.removeItem("planc_admin_booking_id");
+      sessionStorage.removeItem("planc_admin_customer_id");
+      window.location.assign("/admin/login");
+    } catch (error) {
+      console.error("[admin-auth] Unable to sign out", error);
+      showToast("Unable to sign out. Please try again.", "error");
+    }
   };
 
   const pendingCount = opsBookings.filter((b) => b.status === "Pending").length;

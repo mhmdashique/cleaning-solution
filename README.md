@@ -39,7 +39,7 @@ PLAN C Cleaning Solutions is a leading professional cleaning and pest control co
 | `/reviews` | **Reviews & Ratings** | 14+ South Kerala seeded reviews, average rating score (4.9/5), star breakdown distribution, rating filter, and an interactive "Write a Review" form (`approved: false` until admin approved). |
 | `/contact` | **Book / Contact** | Zod + React Hook Form booking submission with anti-spam honeypot, auto-generated unique booking codes (e.g. `PC-2025-XXXX`), interactive Google Maps embed for Thrikannapuram, directions button, and click-to-call. |
 | `/track` | **Live Order Tracking** | **Zero login needed.** Customers enter their Booking ID + Phone number to inspect status (*Pending, Confirmed, In progress, Completed, Cancelled*), assigned team, address, reschedule, or write a post-service review. |
-| `/admin` | **Admin Operations Hub** | **Passcode-protected server-side gate** (`ADMIN_PASSCODE` env var, HTTP-only signed session cookie). No user signup flow. Metrics dashboard, live booking status editor, CSV export, service catalog, review approval moderation, and blog publisher. |
+| `/admin` | **Admin Operations Hub** | Bcrypt-hash password gate, signed 12-hour HTTP-only session cookie, and persistent escalating login lockout. No user signup flow. Metrics dashboard, live booking status editor, CSV export, service catalog, review approval moderation, and blog publisher. |
 | `/blog` | **Knowledge Base** | SEO blog with search, category filtering, reading times, tags, and rich articles targeting Trivandrum keywords. |
 | `/blog/[slug]` | **Article Detail** | Full Markdown article reader, dynamic Table of Contents, social share buttons (WhatsApp, Twitter, Copy Link), JSON-LD `BlogPosting` schema, and related guides. |
 
@@ -74,16 +74,17 @@ cp .env.example .env.local
 
 Configure the environment variables:
 ```env
-# Admin Passcode Gate
-ADMIN_PASSCODE=replace-with-a-secure-passcode
+# Admin Security (generate the bcrypt hash with `npm run admin:hash-password`)
+ADMIN_PASSWORD_HASH=replace-with-bcrypt-hash
+# Generate with: node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+ADMIN_SESSION_SECRET=replace-with-a-long-random-secret
 
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_PHONE=7994342372
 NEXT_PUBLIC_WHATSAPP=917994342372
 
-# Supabase Configuration
-# (Optional: the app includes a complete offline repository fallback if keys are omitted!)
+# Supabase Configuration (required for persistent admin login lockout)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -97,6 +98,14 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 5. For an existing database, run `supabase/migrations/20261104_add_booking_amount.sql` to enable admin-entered booking amounts.
 6. Run `supabase/migrations/20261104_add_booking_payment_status.sql` to enable persistent paid/unpaid status and invoice seals.
 7. For customer reschedule requests, run `supabase/migrations/20261113_add_reschedule_requests.sql` on existing databases.
+8. Run `supabase/migrations/20261114_admin_login_lockout.sql` to enable persistent admin login lockout.
+9. For databases that already have admin lockout, run `supabase/migrations/20261114_admin_login_status_duration.sql` to enable the sign-in lock progress indicator.
+
+Generate a password hash with `npm run admin:hash-password`. Set the resulting
+`ADMIN_PASSWORD_HASH` and a random `ADMIN_SESSION_SECRET` (at least 32 bytes) in
+`.env.local`. Generate the session secret with
+`node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"`.
+Never store the plain password or the session secret in the repository.
 
 ### Step 4: Run the Development Server
 ```bash
@@ -109,8 +118,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 5. Admin Portal Access
 
 - URL: `http://localhost:3000/admin`
-- Enter the value configured in `ADMIN_PASSCODE`.
-- Once verified, a secure HTTP-only cookie (`planc_admin_session`) is set.
+- Enter the password corresponding to `ADMIN_PASSWORD_HASH`.
+- After three failed attempts, sign-in is locked with escalating cooldowns.
+- Successful sign-in sets the signed, HTTP-only `planc_admin_session` cookie for 12 hours.
 - You can manage:
   - **Live bookings:** Update status from `Pending` -> `Confirmed` -> `In progress` -> `Completed`.
   - **Export Bookings:** One-click CSV download.
@@ -133,7 +143,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 1. Push your repository to GitHub / GitLab.
 2. Import the repository in [Vercel](https://vercel.com).
 3. Set the Environment Variables in the Vercel dashboard:
-   - `ADMIN_PASSCODE`
+   - `ADMIN_PASSWORD_HASH`
+   - `ADMIN_SESSION_SECRET`
    - `NEXT_PUBLIC_SITE_URL` (your production domain)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -161,7 +172,8 @@ The home page displays the **latest 3 blog posts** from the knowledge base with:
 1. Push your repository to GitHub / GitLab.
 2. Import the repository in [Vercel](https://vercel.com).
 3. Set the Environment Variables in the Vercel dashboard:
-   - `ADMIN_PASSCODE`
+   - `ADMIN_PASSWORD_HASH`
+   - `ADMIN_SESSION_SECRET`
    - `NEXT_PUBLIC_SITE_URL` (your production domain)
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`

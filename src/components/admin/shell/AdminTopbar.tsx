@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Search, Bell, ChevronRight, ExternalLink, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Search, Bell, ChevronRight, ExternalLink, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useOpsHub } from "@/context/OpsHubContext";
 
 interface AdminTopbarProps {
@@ -429,6 +429,19 @@ export default function AdminTopbar({
                       ))
                     )}
                   </div>
+
+                  {onLogout && (
+                    <button
+                      type="button"
+                      onClick={onLogout}
+                      aria-label="Sign out"
+                      title="Sign out"
+                      className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#E3E8E5] bg-white px-3 text-xs font-semibold text-[#475569] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F6B52]"
+                    >
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                      <span className="hidden sm:inline">Sign out</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

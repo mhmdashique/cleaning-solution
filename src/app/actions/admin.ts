@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import {
   updateBookingStatus,
@@ -24,43 +25,70 @@ import {
 } from "@/lib/data/store";
 import { BlogPost, BookingStatus, Service, ServiceCategory, SiteSettings } from "@/types";
 import type { AdminService } from "@/types/admin";
-
-const ADMIN_COOKIE_NAME = "planc_admin_session";
-const PASSCODE = process.env.ADMIN_PASSCODE;
+import {
+  ADMIN_COOKIE_NAME,
+  adminSessionCookieOptions,
+  authenticateAdminPassword,
+  checkAdminSession as checkAdminSessionFromAuth,
+  createAdminSessionToken,
+} from "@/lib/admin-auth";
 
 export async function verifyPasscodeAction(passcode: string) {
-  if (!PASSCODE) {
+  const requestHeaders = await headers();
+  const result = await authenticateAdminPassword(passcode, requestHeaders);
+
+  if (result.status === "unavailable") {
     return {
       success: false,
-      error: "Admin access is not configured. Set ADMIN_PASSCODE to enable sign-in.",
+      error: "Admin sign-in is temporarily unavailable.",
     };
   }
 
-  if (passcode.trim() === PASSCODE.trim()) {
+  if (result.status === "success") {
     const cookieStore = await cookies();
-    cookieStore.set(ADMIN_COOKIE_NAME, "authenticated", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: "/",
-      sameSite: "lax",
-    });
-    return { success: true };
+    try {
+      const token = await createAdminSessionToken();
+      cookieStore.set(
+        ADMIN_COOKIE_NAME,
+        token,
+        adminSessionCookieOptions()
+      );
+      return { success: true };
+    } catch (error) {
+      console.error("[admin-auth] Unable to create session", error);
+      return {
+        success: false,
+        error: "Admin sign-in is temporarily unavailable.",
+      };
+    }
   }
-  return { success: false, error: "Incorrect admin passcode. Access denied." };
+
+  if (result.status === "locked") {
+    return {
+      success: false,
+      error: "Too many attempts. Please wait before trying again.",
+    };
+  }
+
+  return {
+    success: false,
+    error: "Incorrect password.",
+    attemptsLeft: result.attemptsLeft,
+  };
 }
 
 export async function logoutAdminAction() {
   const cookieStore = await cookies();
-  cookieStore.delete(ADMIN_COOKIE_NAME);
+  cookieStore.set(ADMIN_COOKIE_NAME, "", {
+    ...adminSessionCookieOptions(),
+    maxAge: 0,
+  });
   revalidatePath("/admin");
   return { success: true };
 }
 
 export async function checkAdminSession(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const session = cookieStore.get(ADMIN_COOKIE_NAME);
-  return session?.value === "authenticated";
+  return checkAdminSessionFromAuth();
 }
 
 export async function updateBookingAdminAction(
