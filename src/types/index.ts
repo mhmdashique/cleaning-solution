@@ -75,6 +75,7 @@ export interface FAQ {
   service_id?: string;
   question: string;
   answer: string;
+  created_at?: string;
 }
 
 export interface SiteSettings {

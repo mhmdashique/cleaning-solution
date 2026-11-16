@@ -3,6 +3,7 @@ import {
   getServices,
   getApprovedReviews,
   getPublishedBlogPosts,
+  getFAQs,
 } from "@/lib/data/store";
 import Hero from "@/components/home/Hero";
 import FeatureStrip from "@/components/home/FeatureStrip";
@@ -13,16 +14,18 @@ import HowItWorks from "@/components/home/HowItWorks";
 import ServiceAreas from "@/components/home/ServiceAreas";
 import HomeTestimonials from "@/components/home/HomeTestimonials";
 import HomeBlogSection from "@/components/home/HomeBlogSection";
+import FAQ from "@/components/home/FAQ";
 import ContactSection from "@/components/contact/ContactSection";
 import { SectionSkeleton } from "@/components/ui/Skeleton";
 
 export const revalidate = 60; // ISR every 60 seconds
 
 export default async function HomePage() {
-  const [services, reviews, posts] = await Promise.all([
+  const [services, reviews, posts, faqs] = await Promise.all([
     getServices(),
     getApprovedReviews(),
     getPublishedBlogPosts(),
+    getFAQs(),
   ]);
 
   return (
@@ -54,7 +57,10 @@ export default async function HomePage() {
       {/* 9. Field Knowledge & Blog Guides */}
       <HomeBlogSection posts={posts} />
 
-      {/* 10. Contact & Booking */}
+      {/* 10. Frequently Asked Questions */}
+      <FAQ faqs={faqs} />
+
+      {/* 11. Contact & Booking */}
       <ContactSection services={services} />
     </div>
   );

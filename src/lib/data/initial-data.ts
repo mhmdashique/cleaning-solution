@@ -1,4 +1,4 @@
-import { Service, Review, BlogPost, SiteSettings, Booking } from "@/types";
+import type { FAQ, Service, Review, BlogPost, SiteSettings, Booking } from "@/types";
 
 export const INITIAL_SITE_SETTINGS: SiteSettings = {
   company_name: "PLAN C Cleaning Solutions",
@@ -482,3 +482,56 @@ export const INITIAL_SERVICES: Service[] = [
 export const INITIAL_REVIEWS: Review[] = [];
 export const INITIAL_BLOG_POSTS: BlogPost[] = [];
 export const INITIAL_BOOKINGS: Booking[] = [];
+
+// FAQ data for initial visitors
+export const INITIAL_FAQS: FAQ[] = [
+  {
+    id: "faq-1",
+    service_id: "srv-1",
+    question: "How do I book a service?",
+    answer: "Booking a service is simple! You can book online through our website, call us at 7994342372, or message us on WhatsApp. Just let us know which service you need, your preferred date and time, your location, and any specific instructions for access.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-2",
+    service_id: "srv-1",
+    question: "What are your payment options?",
+    answer: "We accept various payment methods including cash, bank cards, and credit cards. Payment options available include standard rate pricing or monthly subscription plans for regular cleaning services. You can pay at the time of service or set up automatic recurring payments.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-3",
+    service_id: "srv-1",
+    question: "Can I change or reschedule my booking?",
+    answer: "Yes! You can reschedule or change your booking up to 2 hours before the scheduled service time without penalty. Use our online tracking system with your booking ID and phone number, or contact us directly to make any adjustments to your appointment.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-4",
+    service_id: "srv-1",
+    question: "Are your cleaning staff vetted and insured?",
+    answer: "Absolutely! All our cleaning specialists undergo thorough background checks, skills testing, and are fully insured. We maintain complete confidentiality and provide professional references for your peace of mind. Our team is trained in safety protocols and quality standards.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-5",
+    service_id: "srv-1",
+    question: "What products do you use for cleaning?",
+    answer: "We use eco-friendly, non-toxic cleaning products that are safe for children, pets, and the environment. Our cleaning solutions are hypoallergenic and specifically formulated to remove dirt, grime, and bacteria without leaving harmful residues. We also have specialized products for different surface types.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-6",
+    service_id: "srv-1",
+    question: "What guarantees do you offer?",
+    answer: "We stand behind our work with a 100% satisfaction guarantee. If you're not completely happy with our service within 24 hours of completion, we'll return to make it right at no additional cost. This includes re-cleaning any areas that don't meet our quality standards.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+  {
+    id: "faq-7",
+    service_id: "srv-1",
+    question: "What if I have special requirements or have a pet in the house?",
+    answer: "We welcome all special requests! Just let us know about pets, allergies, or any specific concerns during your booking. We have pet-safe products, allergy-friendly options, and special handling procedures for delicate items, elderly care, or accessibility needs.",
+    created_at: "2025-01-01T00:00:00Z",
+  },
+];

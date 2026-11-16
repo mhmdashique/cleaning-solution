@@ -11,6 +11,7 @@ import {
   BlogPost,
   SiteSettings,
   BookingStatus,
+  FAQ,
 } from "@/types";
 import {
   INITIAL_SERVICES,
@@ -18,6 +19,7 @@ import {
   INITIAL_BLOG_POSTS,
   INITIAL_BOOKINGS,
   INITIAL_SITE_SETTINGS,
+  INITIAL_FAQS,
 } from "./initial-data";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/lib/supabase/admin";
 
@@ -36,6 +38,7 @@ declare global {
         bookings: Booking[];
         reviews: Review[];
         blog_posts: BlogPost[];
+        faqs: FAQ[];
         site_settings: SiteSettings;
         client_notes: Record<string, boolean>;
       }
@@ -48,14 +51,19 @@ if (!global.__planc_db) {
     bookings: [...INITIAL_BOOKINGS],
     reviews: [...INITIAL_REVIEWS],
     blog_posts: [...INITIAL_BLOG_POSTS],
+    faqs: [...INITIAL_FAQS],
     site_settings: { ...INITIAL_SITE_SETTINGS },
     client_notes: {},
   };
 }
 
-// Guard against hot-reload snapshots created before client_notes existed.
+// Guard against hot-reload snapshots created before these fields existed.
 if (!global.__planc_db.client_notes) {
   global.__planc_db.client_notes = {};
+}
+
+if (!global.__planc_db.faqs) {
+  global.__planc_db.faqs = [...INITIAL_FAQS];
 }
 
 const memoryDb = global.__planc_db;
@@ -652,7 +660,7 @@ async function fetchPublishedBlogPosts(): Promise<BlogPost[]> {
         .select("*")
         .eq("published", true)
         .order("published_at", { ascending: false });
-      if (!error && data && data.length > 0) return data as BlogPost[];
+      if (!error && data) return data as BlogPost[];
     } catch {
       // fallback
     }
@@ -700,8 +708,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
 export async function createBlogPost(
   payload: Partial<BlogPost>
 ): Promise<BlogPost> {
-  const newPost: BlogPost = {
-    id: `blog-${Date.now()}`,
+  const postFields = {
     slug: payload.slug || `post-${Date.now()}`,
     title: payload.title || "Untitled Article",
     excerpt: payload.excerpt || "",
@@ -715,23 +722,27 @@ export async function createBlogPost(
     published: payload.published !== false,
     meta_title: payload.meta_title || payload.title,
     meta_description: payload.meta_description || payload.excerpt,
-    published_at: new Date().toISOString(),
+    published_at: payload.published_at || new Date().toISOString(),
+  };
+  const newPost: BlogPost = {
+    id: `blog-${Date.now()}`,
+    ...postFields,
   };
 
   if (hasDb && db) {
-    try {
-      const { data, error } = await db
-        .from("blog_posts")
-        .insert(newPost)
-        .select()
-        .single();
-      if (!error && data) {
-        memoryDb.blog_posts.unshift(data as BlogPost);
-        return data as BlogPost;
-      }
-    } catch {
-      // fallback
+    const { data, error } = await db
+      .from("blog_posts")
+      .insert(postFields)
+      .select()
+      .single();
+    if (error) {
+      throw new Error(`Failed to save blog post: ${error.message}`);
     }
+    if (!data) throw new Error("The database did not return the saved blog post.");
+
+    const savedPost = data as BlogPost;
+    memoryDb.blog_posts.unshift(savedPost);
+    return savedPost;
   }
 
   memoryDb.blog_posts.unshift(newPost);
@@ -888,7 +899,47 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   return memoryDb.site_settings;
 }
 
-export async function updateSiteSettings(patch: Partial<SiteSettings>): Promise<SiteSettings> {
+export async function updateSiteSettings(
+  patch: Partial<SiteSettings>
+): Promise<SiteSettings> {
   memoryDb.site_settings = { ...memoryDb.site_settings, ...patch };
   return memoryDb.site_settings;
+}
+
+// ---------------------------------------------------------------------------
+// FAQ
+// ---------------------------------------------------------------------------
+
+async function fetchFAQs(): Promise<FAQ[]> {
+  if (hasDb && db) {
+    try {
+      const { data, error } = await db
+        .from("faqs")
+        .select("*");
+      if (!error && data && data.length > 0) return data as FAQ[];
+    } catch {
+      // fallback to memory
+    }
+  }
+  return memoryDb.faqs || [];
+}
+
+export async function getFAQs(): Promise<FAQ[]> {
+  return withTimeout(fetchFAQs(), memoryDb.faqs || []);
+}
+
+export async function getFAQById(id: string): Promise<FAQ | null> {
+  if (hasDb && db) {
+    try {
+      const { data, error } = await db
+        .from("faqs")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (!error && data) return data as FAQ;
+    } catch {
+      // fallback to memory
+    }
+  }
+  return memoryDb.faqs.find((faq) => faq.id === id) || null;
 }

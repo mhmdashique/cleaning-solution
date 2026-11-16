@@ -446,20 +446,29 @@ export async function saveBlogPostAdminAction(input: BlogAdminInput) {
   }
 
   const slug = input.slug.trim() || makeSlug(input.title);
-  const post = await createBlogPost({
-    title: input.title.trim(),
-    slug,
-    excerpt: input.excerpt.trim(),
-    content: input.content.trim(),
-    category: input.category,
-    author: input.author.trim() || "PLAN C Editorial Team",
-    cover_image: input.coverImage?.trim(),
-    tags: input.tags?.length ? input.tags : ["Cleaning"],
-    published: input.status === "Published",
-    meta_title: input.title.trim(),
-    meta_description: input.excerpt.trim(),
-    published_at: new Date().toISOString(),
-  });
+  let post: BlogPost;
+  try {
+    post = await createBlogPost({
+      title: input.title.trim(),
+      slug,
+      excerpt: input.excerpt.trim(),
+      content: input.content.trim(),
+      category: input.category,
+      author: input.author.trim() || "PLAN C Editorial Team",
+      cover_image: input.coverImage?.trim(),
+      tags: input.tags?.length ? input.tags : ["Cleaning"],
+      published: input.status === "Published",
+      meta_title: input.title.trim(),
+      meta_description: input.excerpt.trim(),
+      published_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Failed to save blog post", error);
+    return {
+      success: false as const,
+      error: "The article could not be saved to the database. Please check the slug and try again.",
+    };
+  }
 
   revalidateBlogPaths();
   return { success: true as const, post };

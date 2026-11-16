@@ -33,7 +33,7 @@ export async function submitReviewAction(formData: FormData) {
 
     return { 
       success: true, 
-      message: "Thank you for your review! It has been submitted and will appear on the site once approved by our team." 
+      message: "We truly appreciate you taking the time to share your experience. Our team will review your submission before it appears on the site."
     };
   } catch (error) {
     return { 

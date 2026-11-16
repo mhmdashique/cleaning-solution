@@ -46,6 +46,24 @@ interface AdminDashboardProps {
   clientNoteStates?: Record<string, boolean>;
 }
 
+function toAdminArticle(post: BlogPost): AdminArticle {
+  return {
+    id: post.id,
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: post.content,
+    category: post.category || "Home cleaning",
+    author: post.author || "Plan C Crew",
+    date: new Date(post.published_at).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }),
+    status: post.published ? "Published" : "Draft",
+  };
+}
+
 export default function AdminDashboard(props: AdminDashboardProps) {
   return (
     <OpsHubProvider initialServices={props.services} initialBookings={props.bookings}>
@@ -133,17 +151,7 @@ function AdminDashboardContent({
 
   const [articles, setArticles] = useState<AdminArticle[]>(() => {
     if (dbArticles && dbArticles.length > 0) {
-      return dbArticles.map((a) => ({
-        id: a.id,
-        slug: a.slug,
-        title: a.title,
-        excerpt: a.excerpt,
-        content: a.content,
-        category: (a.category as AdminArticle["category"]) || "Home cleaning",
-        author: a.author || "Plan C Crew",
-        date: "18 May 2025",
-        status: (a.published ? "Published" : "Draft") as "Published" | "Draft",
-      }));
+      return dbArticles.map(toAdminArticle);
     }
     return [];
   });
@@ -360,17 +368,6 @@ function AdminDashboardContent({
           <ArticlesView
             articles={articles}
             onCreateArticle={async (newArt) => {
-              const fullArt: AdminArticle = {
-                id: `art-${Date.now()}`,
-                slug: newArt.slug || "new-article",
-                title: newArt.title || "Untitled article",
-                excerpt: newArt.excerpt || "",
-                category: newArt.category || "Home cleaning",
-                author: newArt.author || "Plan C Crew",
-                date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-                status: (newArt.status as "Published" | "Draft") || "Published",
-              };
-              setArticles((prev) => [fullArt, ...prev]);
               try {
                 const result = await saveBlogPostAdminAction({
                   title: newArt.title || "Untitled article",
@@ -385,6 +382,7 @@ function AdminDashboardContent({
                   showToast(result.error || "Could not save the article.", "error");
                   return;
                 }
+                setArticles((prev) => [toAdminArticle(result.post), ...prev]);
                 showToast("Article created and saved.");
               } catch (e) {
                 console.error("Failed to create article on server", e);

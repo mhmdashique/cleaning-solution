@@ -248,19 +248,13 @@ export default function ReviewsClient({
             </p>
           </div>
 
-          {formStatus && (
+          {formStatus && !formStatus.success && (
             <div
-              className={`p-4 rounded-2xl flex items-start gap-3 text-sm ${
-                formStatus.success
-                  ? "bg-brand-50 text-brand-900 border border-brand-200"
-                  : "bg-red-50 text-red-900 border border-red-200"
-              }`}
+              role="alert"
+              aria-live="assertive"
+              className="p-4 rounded-2xl flex items-start gap-3 text-sm bg-red-50 text-red-900 border border-red-200"
             >
-              {formStatus.success ? (
-                <Check className="w-5 h-5 text-brand-600 flex-shrink-0 mt-0.5" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              )}
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="leading-relaxed">{formStatus.message}</p>
             </div>
           )}
@@ -372,6 +366,42 @@ export default function ReviewsClient({
           </form>
         </div>
       </div>
+
+      {formStatus?.success && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="review-success-title"
+            aria-describedby="review-success-message"
+            className="w-full max-w-md rounded-3xl border border-brand-100 bg-white px-7 py-8 text-center shadow-2xl sm:px-9"
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+              <Check className="h-8 w-8" />
+            </div>
+            <h2
+              id="review-success-title"
+              className="mt-5 text-xl font-extrabold text-slate-900"
+            >
+              Thank you for your valuable feedback!
+            </h2>
+            <p
+              id="review-success-message"
+              className="mt-3 text-sm leading-relaxed text-slate-600"
+            >
+              {formStatus.message}
+            </p>
+            <button
+              type="button"
+              autoFocus
+              onClick={() => setFormStatus(null)}
+              className="mt-7 inline-flex min-w-32 items-center justify-center rounded-xl bg-brand-700 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );
